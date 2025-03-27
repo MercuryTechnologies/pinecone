@@ -1,0 +1,54 @@
+cabal-version:      2.4
+name:               pinecone
+version:            1.0.0
+synopsis:           Servant bindings to Pinecone
+description:        This package provides comprehensive and type-safe bindings
+                    to Pinecone, providing both a Servant interface and
+                    non-Servant interface for convenience.
+license:            BSD-3-Clause
+license-file:       LICENSE
+author:             Gabriella Gonzalez
+maintainer:         GenuineGabriella@gmail.com
+copyright:          2025 Mercury Technologies
+build-type:         Simple
+extra-doc-files:    CHANGELOG.md README.md
+
+library
+    default-language:   Haskell2010
+    build-depends:      base >= 4.15.0.0 && < 5
+                      , aeson
+                      , containers
+                      , http-client-tls
+                      , servant
+                      , servant-client
+                      , text
+                      , vector
+    exposed-modules:    Pinecone
+                      , Pinecone.Indexes
+    other-modules:      Pinecone.Prelude
+    default-extensions: BlockArguments
+                      , DataKinds
+                      , DeriveGeneric
+                      , DeriveAnyClass
+                      , DerivingStrategies
+                      , DuplicateRecordFields
+                      , OverloadedStrings
+                      , RecordWildCards
+                      , TypeApplications
+                      , TypeOperators
+    hs-source-dirs:     src
+    ghc-options:        -Wall
+
+test-suite tasty
+    default-language: Haskell2010
+    type:             exitcode-stdio-1.0
+    hs-source-dirs:   tasty
+    main-is:          Main.hs
+    build-depends:    base
+                    , http-client
+                    , http-client-tls
+                    , pinecone
+                    , servant-client
+                    , tasty
+                    , tasty-hunit
+                    , text
