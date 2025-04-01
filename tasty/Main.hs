@@ -1,10 +1,24 @@
-{-# LANGUAGE BlockArguments  #-}
-{-# LANGUAGE RecordWildCards #-}
+{-# LANGUAGE BlockArguments        #-}
+{-# LANGUAGE DuplicateRecordFields #-}
+{-# LANGUAGE NamedFieldPuns        #-}
+{-# LANGUAGE RecordWildCards       #-}
+{-# LANGUAGE OverloadedStrings     #-}
+{-# LANGUAGE OverloadedLists       #-}
 
 module Main where
 
 import Pinecone (Methods(..))
+import Pinecone.Indexes
+    ( Cloud(..)
+    , CreateIndexWithEmbedding(..)
+    , ConfigureIndex(..)
+    , EmbedRequest(..)
+    , IndexModel(..)
+    , IndexModels(..)
+    , Status(..)
+    )
 
+import qualified Control.Exception as Exception
 import qualified Data.Text as Text
 import qualified Network.HTTP.Client as HTTP.Client
 import qualified Network.HTTP.Client.TLS as TLS
@@ -33,9 +47,53 @@ main = do
 
     let indexesTest =
             HUnit.testCase "Create index" do
-                _ <- listIndexes
+                let open = do
+                        createIndexWithEmbedding CreateIndexWithEmbedding
+                            { name = "test"
+                            , cloud = AWS
+                            , region = "us-east-1"
+                            , embed = EmbedRequest
+                                { model = "llama-text-embed-v2"
+                                , field_map = [ ("text", "contents") ]
+                                , metric = Nothing
+                                , read_parameters = Nothing
+                                , write_parameters = Nothing
+                                }
+                            , deletion_protection = Nothing
+                            , tags = Nothing
+                            }
 
-                return ()
+                let close IndexModel{ name } = deleteIndex name
+
+                Exception.bracket open close \IndexModel{ name } -> do
+                    let waitUntilReady = do
+                            indexModel <- describeIndex name
+
+                            let IndexModel{ status } = indexModel
+
+                            let Status{ ready } = status
+
+                            if ready
+                                then return indexModel
+                                else waitUntilReady
+
+                    indexModel <- waitUntilReady
+
+                    IndexModels{ indexes } <- listIndexes
+
+                    case indexes of
+                        [ indexModel₀ ]
+                            | indexModel == indexModel₀ -> return ()
+                        _ -> HUnit.assertFailure "GET /indexes - wrong models"
+
+                    _ <- configureIndex name ConfigureIndex
+                        { spec = Nothing
+                        , deletion_protection = Nothing
+                        , tags = Just [ ("foo", "bar") ]
+                        , embed = Nothing
+                        }
+
+                    return ()
 
     let tests =
             [ indexesTest

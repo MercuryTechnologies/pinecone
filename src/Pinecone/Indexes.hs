@@ -1,8 +1,18 @@
 -- | @\/indexes@
 module Pinecone.Indexes
     ( -- * Main types
-      IndexModels(..)
+      Index(..)
+    , IndexModels(..)
     , IndexModel(..)
+    , CreateIndex(..)
+    , _CreateIndex
+    , CreateIndexWithEmbedding(..)
+    , _CreateIndexWithEmbedding
+    , ConfigureIndex(..)
+    , _ConfigureIndex
+    , GetIndexStats(..)
+    , _GetIndexStats
+    , IndexStats(..)
 
       -- * Other types
     , Metric(..)
@@ -18,25 +28,33 @@ module Pinecone.Indexes
     , State(..)
     , VectorType(..)
     , DeletionProtection(..)
-    , Embed(..)
+    , EmbedRequest(..)
+    , EmbedResponse(..)
+    , Contents(..)
 
       -- * API
     , API
     ) where
 
 import Pinecone.Prelude
+import Pinecone.Filter
 
 import qualified Data.Text as Text
 
+-- | The name of the index
+newtype Index = Index{ text :: Text }
+    deriving newtype (Eq, FromJSON, IsString, Show, ToHttpApiData, ToJSON)
+
+-- | The list of indexes that exist in the project
 data IndexModels = IndexModels
     { indexes :: Vector IndexModel
-    } deriving stock (Generic, Show)
+    } deriving stock (Eq, Generic, Show)
       deriving anyclass (FromJSON, ToJSON)
 
 -- | The `IndexModel` describes the configuration and status of a Pinecone
 -- index
 data IndexModel = IndexModel
-    { name :: Text
+    { name :: Index
     , metric :: Metric
     , host :: Text
     , spec :: Spec
@@ -45,13 +63,94 @@ data IndexModel = IndexModel
     , dimension :: Maybe Natural
     , deletion_protection :: Maybe DeletionProtection
     , tags :: Maybe (Map Text Text)
-    , embed :: Maybe Embed
-    } deriving stock (Generic, Show)
+    , embed :: Maybe EmbedResponse
+    } deriving stock (Eq, Generic, Show)
+      deriving anyclass (FromJSON, ToJSON)
+
+-- | The desired configuration for the index
+data CreateIndex = CreateIndex
+    { name :: Index
+    , spec :: Spec
+    , dimension :: Maybe Natural
+    , metric :: Maybe Metric
+    , deletion_protection :: Maybe DeletionProtection
+    , tags :: Maybe (Map Text Text)
+    , vector_type :: Maybe VectorType
+    } deriving stock (Eq, Generic, Show)
+      deriving anyclass (FromJSON, ToJSON)
+
+-- | Default `CreateIndex`
+_CreateIndex :: CreateIndex
+_CreateIndex = CreateIndex
+    { dimension = Nothing
+    , metric = Nothing
+    , deletion_protection = Nothing
+    , tags = Nothing
+    , vector_type = Nothing
+    }
+
+-- | The desired configuration for the index and associated embedding model
+data CreateIndexWithEmbedding = CreateIndexWithEmbedding
+    { name :: Index
+    , cloud :: Cloud
+    , region :: Text
+    , embed :: EmbedRequest
+    , deletion_protection :: Maybe DeletionProtection
+    , tags :: Maybe (Map Text Text)
+    } deriving stock (Eq, Generic, Show)
+      deriving anyclass (FromJSON, ToJSON)
+
+-- | Default `CreateIndexWithEmbedding`
+_CreateIndexWithEmbedding :: CreateIndexWithEmbedding
+_CreateIndexWithEmbedding = CreateIndexWithEmbedding
+    { deletion_protection = Nothing
+    , tags = Nothing
+    }
+
+-- | The desired pod size and replica configuration for the index
+data ConfigureIndex = ConfigureIndex
+    { spec :: Maybe Spec
+    , deletion_protection :: Maybe DeletionProtection
+    , tags :: Maybe (Map Text Text)
+    , embed :: Maybe EmbedRequest
+    } deriving stock (Eq, Generic, Show)
+      deriving anyclass (FromJSON, ToJSON)
+
+-- | Default `ConfigureIndex`
+_ConfigureIndex :: ConfigureIndex
+_ConfigureIndex = ConfigureIndex
+    { spec = Nothing
+    , deletion_protection = Nothing
+    , tags = Nothing
+    , embed = Nothing
+    }
+
+-- | Request body for @\/describe_index_stats@
+data GetIndexStats = GetIndexStats
+    { filter :: Maybe Filter
+    } deriving stock (Eq, Generic, Show)
+      deriving anyclass (FromJSON, ToJSON)
+
+-- | Default `GetIndexStats`
+_GetIndexStats :: GetIndexStats
+_GetIndexStats = GetIndexStats
+    { filter = Nothing
+    }
+
+-- | Response body for @\/describe_index_stats@
+data IndexStats = IndexStats
+    { namespaces :: Maybe (Map Text Contents)
+    , dimension :: Maybe Natural
+    , indexFullness :: Maybe Double
+    , totalVectorCount :: Maybe Natural
+    , metric :: Maybe Metric
+    , vectorType :: Maybe VectorType
+    } deriving stock (Eq, Generic, Show)
       deriving anyclass (FromJSON, ToJSON)
 
 -- | The distance metric to be used for similarity search
 data Metric = Cosine | Euclidean | DotProduct
-    deriving stock (Generic, Show)
+    deriving stock (Eq, Generic, Show)
 
 instance FromJSON Metric where
     parseJSON = genericParseJSON aesonOptions
@@ -59,11 +158,11 @@ instance FromJSON Metric where
 instance ToJSON Metric where
     toJSON = genericToJSON aesonOptions
 
--- | `Spec` objet
+-- | `Spec` object
 data Spec = Spec
     { pod :: Maybe Pod
     , serverless :: Maybe Serverless
-    } deriving stock (Generic, Show)
+    } deriving stock (Eq, Generic, Show)
       deriving anyclass (FromJSON, ToJSON)
 
 -- | Configuration needed to deploy a pod-based index.
@@ -75,14 +174,14 @@ data Pod = Pod
     , pods :: Maybe Natural
     , metadata_config :: Maybe MetadataConfig
     , source_collection :: Maybe Text
-    } deriving stock (Generic, Show)
+    } deriving stock (Eq, Generic, Show)
       deriving anyclass (FromJSON, ToJSON)
 
 -- | The type of pod to use
 data PodType = PodType
     { prefix :: Prefix
     , suffix :: Suffix
-    } deriving stock (Generic, Show)
+    } deriving stock (Eq, Generic, Show)
 
 instance ToJSON PodType where
     toJSON PodType{..} = do
@@ -110,7 +209,7 @@ instance FromJSON PodType where
 
 -- | The first component of a pod type
 data Prefix = S1 | P1 | P2
-    deriving stock (Generic, Show)
+    deriving stock (Eq, Generic, Show)
 
 instance FromJSON Prefix where
     parseJSON = genericParseJSON aesonOptions
@@ -120,7 +219,7 @@ instance ToJSON Prefix where
 
 -- | The second component of a pod type
 data Suffix = X1 | X2 | X4 | X8
-    deriving stock (Generic, Show)
+    deriving stock (Eq, Generic, Show)
 
 instance FromJSON Suffix where
     parseJSON = genericParseJSON aesonOptions
@@ -131,19 +230,19 @@ instance ToJSON Suffix where
 -- | Configuration for the behavior of Pinecone's internal metadata index
 data MetadataConfig = MetadataConfig
     { indexed :: Maybe (Vector Text)
-    } deriving stock (Generic, Show)
+    } deriving stock (Eq, Generic, Show)
       deriving anyclass (FromJSON, ToJSON)
 
 -- | Configuration needed to deploy a serverless index
 data Serverless = Serverless
     { cloud :: Cloud
     , region :: Text
-    } deriving stock (Generic, Show)
+    } deriving stock (Eq, Generic, Show)
       deriving anyclass (FromJSON, ToJSON)
 
 -- | The public cloud where you would like your index hosted
 data Cloud = GCP | AWS | Azure
-    deriving stock (Generic, Show)
+    deriving stock (Eq, Generic, Show)
 
 instance FromJSON Cloud where
     parseJSON = genericParseJSON aesonOptions
@@ -155,7 +254,7 @@ instance ToJSON Cloud where
 data Status = Status
     { ready :: Bool
     , state :: State
-    } deriving stock (Generic, Show)
+    } deriving stock (Eq, Generic, Show)
       deriving anyclass (FromJSON, ToJSON)
 
 -- | Index state
@@ -168,7 +267,7 @@ data State
     | ScalingDownPodSize
     | Terminating
     | Ready
-    deriving stock (Generic, Show)
+    deriving stock (Eq, Generic, Show)
 
 instance FromJSON State where
     parseJSON = genericParseJSON aesonOptions{ constructorTagModifier = id }
@@ -176,8 +275,9 @@ instance FromJSON State where
 instance ToJSON State where
     toJSON = genericToJSON aesonOptions{ constructorTagModifier = id }
 
+-- | The index vector type
 data VectorType = Dense | Sparse
-    deriving stock (Generic, Show)
+    deriving stock (Eq, Generic, Show)
 
 instance FromJSON VectorType where
     parseJSON = genericParseJSON aesonOptions
@@ -185,8 +285,9 @@ instance FromJSON VectorType where
 instance ToJSON VectorType where
     toJSON = genericToJSON aesonOptions
 
+-- | Whether deletion protection is enabled/disabled for the index.
 data DeletionProtection = Disabled | Enabled
-    deriving stock (Generic, Show)
+    deriving stock (Eq, Generic, Show)
 
 instance FromJSON DeletionProtection where
     parseJSON = genericParseJSON aesonOptions
@@ -194,18 +295,63 @@ instance FromJSON DeletionProtection where
 instance ToJSON DeletionProtection where
     toJSON = genericToJSON aesonOptions
 
-data Embed = Embed
+-- | Specify the integrated inference embedding configuration for the index
+data EmbedRequest = EmbedRequest
+    { model :: Text
+    , field_map :: Map Text Text
+    , metric :: Maybe Metric
+    , read_parameters :: Maybe (Map Text Value)
+    , write_parameters :: Maybe (Map Text Value)
+    } deriving stock (Eq, Generic, Show)
+      deriving anyclass (FromJSON, ToJSON)
+
+-- | The embedding model and document fields mapped to embedding inputs
+data EmbedResponse = EmbedResponse
     { model :: Text
     , metric :: Maybe Metric
     , dimension :: Maybe Natural
     , vector_type :: Maybe VectorType
     , field_map :: Maybe (Map Text Text)
-    , read_parameters :: Maybe (Map Text Text)
-    , write_parameters :: Maybe (Map Text Text)
-    } deriving stock (Generic, Show)
+    , read_parameters :: Maybe (Map Text Value)
+    , write_parameters :: Maybe (Map Text Value)
+    } deriving stock (Eq, Generic, Show)
+      deriving anyclass (FromJSON, ToJSON)
+
+-- | A summary of the contents of a namespace
+data Contents = Contents
+    { vectorCount :: Maybe Natural
+    } deriving stock (Eq, Generic, Show)
       deriving anyclass (FromJSON, ToJSON)
 
 -- | Servant API
 type API =
-        "indexes"
-    :>  Get '[JSON] IndexModels
+          (   "indexes"
+          :>  (     Get '[JSON] IndexModels
+
+              :<|>  (   ReqBody '[JSON] CreateIndex
+                    :>  Post '[JSON] IndexModel
+                    )
+
+              :<|>  (   "create-for-model"
+                    :>  ReqBody '[JSON] CreateIndexWithEmbedding
+                    :>  PostCreated '[JSON] IndexModel
+                    )
+
+              :<|>  (   Capture "index_name" Index
+                    :>  Get '[JSON] IndexModel
+                    )
+
+              :<|>  (   Capture "index_name" Index
+                    :>  DeleteAccepted '[JSON] NoContent
+                    )
+
+              :<|>  (   Capture "index_name" Index
+                    :>  ReqBody '[JSON] ConfigureIndex
+                    :>  Patch '[JSON] IndexModel
+                    )
+              )
+          )
+    :<|>  (   "describe_index_stats"
+          :>  ReqBody '[JSON] GetIndexStats
+          :>  Post '[JSON] IndexStats
+          )

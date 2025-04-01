@@ -18,12 +18,15 @@ library
     build-depends:      base >= 4.15.0.0 && < 5
                       , aeson
                       , containers
+                      , http-api-data
                       , http-client-tls
+                      , scientific
                       , servant
                       , servant-client
                       , text
                       , vector
     exposed-modules:    Pinecone
+                      , Pinecone.Filter
                       , Pinecone.Indexes
     other-modules:      Pinecone.Prelude
     default-extensions: BlockArguments
@@ -32,12 +35,14 @@ library
                       , DeriveAnyClass
                       , DerivingStrategies
                       , DuplicateRecordFields
+                      , GeneralizedNewtypeDeriving
+                      , OverloadedLists
                       , OverloadedStrings
                       , RecordWildCards
                       , TypeApplications
                       , TypeOperators
     hs-source-dirs:     src
-    ghc-options:        -Wall
+    ghc-options:        -Wall -Wno-missing-fields
 
 test-suite tasty
     default-language: Haskell2010
@@ -52,3 +57,4 @@ test-suite tasty
                     , tasty
                     , tasty-hunit
                     , text
+    ghc-options:      -Wall
