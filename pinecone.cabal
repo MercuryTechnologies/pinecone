@@ -26,8 +26,9 @@ library
                       , text
                       , vector
     exposed-modules:    Pinecone
-                      , Pinecone.Filter
                       , Pinecone.Indexes
+                      , Pinecone.Metadata
+                      , Pinecone.Vectors
     other-modules:      Pinecone.Prelude
     default-extensions: BlockArguments
                       , DataKinds

@@ -8,6 +8,8 @@
 module Main where
 
 import Pinecone (Methods(..))
+import Prelude hiding (id)
+
 import Pinecone.Indexes
     ( Cloud(..)
     , CreateIndexWithEmbedding(..)
@@ -16,6 +18,17 @@ import Pinecone.Indexes
     , IndexModel(..)
     , IndexModels(..)
     , Status(..)
+    )
+import Pinecone.Vectors
+    ( DeleteVectors(..)
+    , FetchVectors(..)
+    , ListVectorIDs(..)
+    , UpdateVector(..)
+    , UpsertText(..)
+    , UpsertVectorsRequest(..)
+    , UpsertVectorsResponse(..)
+    , VectorID(..)
+    , VectorObject(..)
     )
 
 import qualified Control.Exception as Exception
@@ -46,10 +59,10 @@ main = do
     let Methods{..} = Pinecone.makeMethods clientEnv (Text.pack key)
 
     let indexesTest =
-            HUnit.testCase "Create index" do
+            HUnit.testCase "Indexes" do
                 let open = do
                         createIndexWithEmbedding CreateIndexWithEmbedding
-                            { name = "test"
+                            { name = "indexes-test"
                             , cloud = AWS
                             , region = "us-east-1"
                             , embed = EmbedRequest
@@ -95,8 +108,97 @@ main = do
 
                     return ()
 
+    let vectorsTest =
+            HUnit.testCase "Vectors" do
+                let open = do
+                        createIndexWithEmbedding CreateIndexWithEmbedding
+                            { name = "vectors-test"
+                            , cloud = AWS
+                            , region = "us-east-1"
+                            , embed = EmbedRequest
+                                { model = "llama-text-embed-v2"
+                                , field_map = [ ("text", "contents") ]
+                                , metric = Nothing
+                                , read_parameters = Nothing
+                                , write_parameters = Nothing
+                                }
+                            , deletion_protection = Nothing
+                            , tags = Nothing
+                            }
+
+                let close IndexModel{ name } = deleteIndex name
+
+                Exception.bracket open close \IndexModel{ name } -> do
+                    let waitUntilReady = do
+                            indexModel <- describeIndex name
+
+                            let IndexModel{ status } = indexModel
+
+                            let Status{ ready } = status
+
+                            if ready
+                                then return ()
+                                else waitUntilReady
+
+                    waitUntilReady
+
+                    UpsertVectorsResponse{..} <- upsertVectors UpsertVectorsRequest
+                        { vectors =
+                            [ VectorObject
+                                { id = "vector-0"
+                                , values = Just [ 0.1, 0.1, 0.1, 0.1, 0.1, 0.1, 0.1, 0.1 ]
+                                , sparseValues = Nothing
+                                , metadata = Nothing
+                                }
+                            ]
+                        , namespace = Nothing
+                        }
+
+                    HUnit.assertEqual "" upsertedCount 1
+
+                    upsertText name UpsertText
+                        { id = "vector-1"
+                        , text = "Hello, world!"
+                        , metadata = Just [ ("category", "farewell") ]
+                        }
+
+                    updateVector UpdateVector
+                        { id = "vector-1"
+                        , values = Nothing
+                        , sparseValues = Nothing
+                        , setMetadata = Just [ ("category", "greeting") ]
+                        , namespace = Nothing
+                        }
+
+                    FetchVectors{ vectors } <- fetchVectors "vector-1" (Just name)
+
+                    case vectors of
+                        [   ( "vector-0"
+                            , VectorObject{ values = Just [ 0.1, 0.1, 0.1, 0.1, 0.1, 0.1, 0.1, 0.1 ] }
+                            )
+                          , ( "vector-1"
+                            , VectorObject{ metadata = Just [ ("category", "greeting") ] }
+                            )
+                          ] -> do
+                            return ()
+                        _ -> do
+                            HUnit.assertFailure "GET /vectors/fetch - wrong vectors"
+
+                    ListVectorIDs{ vectors = vectorIDs } <- listVectorIDs Nothing Nothing Nothing (Just name)
+
+                    deleteVectors DeleteVectors
+                        { ids = Just (fmap (\VectorID{ id } -> id) vectorIDs)
+                        , deleteAll = Nothing
+                        , namespace = Just name
+                        , filter = Nothing
+                        }
+
+                    return ()
+
+
     let tests =
             [ indexesTest
+            , vectorsTest
             ]
 
     Tasty.defaultMain (Tasty.testGroup "Tests" tests)

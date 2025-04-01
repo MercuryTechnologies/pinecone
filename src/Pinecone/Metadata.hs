@@ -1,5 +1,5 @@
 -- | Pinecone's filtering query language
-module Pinecone.Filter
+module Pinecone.Metadata
     ( Scalar(..)
     , Filter(..)
     ) where

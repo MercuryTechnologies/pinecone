@@ -24,10 +24,20 @@ import Pinecone.Indexes
     , IndexModels
     , IndexStats
     )
+import Pinecone.Vectors
+    ( DeleteVectors
+    , FetchVectors
+    , ListVectorIDs
+    , UpdateVector
+    , UpsertVectorsRequest
+    , UpsertVectorsResponse
+    , UpsertText
+    )
 
 import qualified Control.Exception as Exception
 import qualified Data.Text as Text
 import qualified Pinecone.Indexes as Indexes
+import qualified Pinecone.Vectors as Vectors
 import qualified Network.HTTP.Client.TLS as TLS
 import qualified Servant.Client as Client
 
@@ -50,17 +60,29 @@ makeMethods
     -> Methods
 makeMethods clientEnv token = Methods{..}
   where
-    (       (     listIndexes
-            :<|>  createIndex
-            :<|>  createIndexWithEmbedding
-            :<|>  describeIndex
-            :<|>  deleteIndex_
-            :<|>  configureIndex
+    (       (     (     listIndexes
+                  :<|>  createIndex
+                  :<|>  createIndexWithEmbedding
+                  :<|>  describeIndex
+                  :<|>  deleteIndex_
+                  :<|>  configureIndex
+                  )
+            :<|>  getIndexStats
             )
-      :<|>  getIndexStats
+      :<|>  (      (     upsertVectors
+                  :<|>  fetchVectors
+                  :<|>  updateVector_
+                  :<|>  deleteVectors_
+                  :<|>  listVectorIDs
+                  )
+            :<|>  upsertText_
+            )
       ) = Client.hoistClient @API Proxy run (Client.client @API Proxy) token "2025-01"
 
     deleteIndex a = void (deleteIndex_ a)
+    updateVector a = void (updateVector_ a)
+    deleteVectors a = void (deleteVectors_ a)
+    upsertText a b = void (upsertText_ a b)
 
     run :: Client.ClientM a -> IO a
     run clientM = do
@@ -78,10 +100,30 @@ data Methods = Methods
     , deleteIndex :: Index -> IO ()
     , configureIndex :: Index -> ConfigureIndex -> IO IndexModel
     , getIndexStats :: GetIndexStats -> IO IndexStats
+    , upsertVectors :: UpsertVectorsRequest -> IO UpsertVectorsResponse
+    , upsertText :: Index -> UpsertText -> IO ()
+    , fetchVectors
+        :: Text
+        -- ^ IDs
+        -> Maybe Index
+        -- ^ namespace
+        -> IO FetchVectors
+    , updateVector :: UpdateVector -> IO ()
+    , deleteVectors :: DeleteVectors -> IO ()
+    , listVectorIDs
+        :: Maybe Text
+        -- ^ prefix
+        -> Maybe Natural
+        -- ^ limit
+        -> Maybe Text
+        -- ^ pagination token
+        -> Maybe Index
+        -- ^ namespace
+        -> IO ListVectorIDs
     }
 
 -- | Servant API
 type API =
         Header' [ Required, Strict ] "Api-Key" Text
     :>  Header' [ Required, Strict ] "X-Pinecone-API-Version" Text
-    :>  Indexes.API
+    :>  (Indexes.API :<|> Vectors.API)

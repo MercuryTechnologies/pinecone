@@ -36,9 +36,10 @@ module Pinecone.Indexes
     , API
     ) where
 
+import Pinecone.Metadata
 import Pinecone.Prelude
-import Pinecone.Filter
 
+import qualified Data.Aeson.KeyMap as KeyMap
 import qualified Data.Text as Text
 
 -- | The name of the index
@@ -139,12 +140,12 @@ _GetIndexStats = GetIndexStats
 
 -- | Response body for @\/describe_index_stats@
 data IndexStats = IndexStats
-    { namespaces :: Maybe (Map Text Contents)
-    , dimension :: Maybe Natural
-    , indexFullness :: Maybe Double
-    , totalVectorCount :: Maybe Natural
-    , metric :: Maybe Metric
-    , vectorType :: Maybe VectorType
+    { namespaces :: Map Text Contents
+    , dimension :: Natural
+    , indexFullness :: Double
+    , totalVectorCount :: Natural
+    , metric :: Metric
+    , vectorType :: VectorType
     } deriving stock (Eq, Generic, Show)
       deriving anyclass (FromJSON, ToJSON)
 
@@ -303,7 +304,15 @@ data EmbedRequest = EmbedRequest
     , read_parameters :: Maybe (Map Text Value)
     , write_parameters :: Maybe (Map Text Value)
     } deriving stock (Eq, Generic, Show)
-      deriving anyclass (FromJSON, ToJSON)
+      deriving anyclass (FromJSON)
+
+instance ToJSON EmbedRequest where
+    toJSON embedRequest =
+        Object (KeyMap.insert "field_map" (Object [ ("text", "text") ]) object)
+      where
+        object = case genericToJSON aesonOptions embedRequest of
+            Object o -> o
+            _ -> KeyMap.empty
 
 -- | The embedding model and document fields mapped to embedding inputs
 data EmbedResponse = EmbedResponse
@@ -319,7 +328,7 @@ data EmbedResponse = EmbedResponse
 
 -- | A summary of the contents of a namespace
 data Contents = Contents
-    { vectorCount :: Maybe Natural
+    { vectorCount :: Natural
     } deriving stock (Eq, Generic, Show)
       deriving anyclass (FromJSON, ToJSON)
 
