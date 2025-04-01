@@ -34,6 +34,7 @@ import Pinecone.Vectors
     ( DeleteVectors
     , FetchVectors
     , ListVectorIDs
+    , Namespace
     , Record
     , UpdateVector
     , UpsertVectorsRequest
@@ -111,11 +112,11 @@ data Methods = Methods
     , configureIndex :: Index -> ConfigureIndex -> IO IndexModel
     , getIndexStats :: GetIndexStats -> IO IndexStats
     , upsertVectors :: UpsertVectorsRequest -> IO UpsertVectorsResponse
-    , upsertText :: Index -> Vector Record -> IO ()
+    , upsertText :: Namespace -> Vector Record -> IO ()
     , fetchVectors
         :: Text
         -- ^ IDs
-        -> Maybe Index
+        -> Maybe Namespace
         -- ^ namespace
         -> IO FetchVectors
     , updateVector :: UpdateVector -> IO ()
@@ -127,12 +128,12 @@ data Methods = Methods
         -- ^ limit
         -> Maybe Text
         -- ^ pagination token
-        -> Maybe Index
+        -> Maybe Namespace
         -- ^ namespace
         -> IO ListVectorIDs
     , searchWithVector :: SearchWithVectorRequest -> IO SearchWithVectorResponse
     , searchWithText
-        :: Index
+        :: Namespace
         -> SearchWithTextRequest
         -> IO SearchWithTextResponse
     }

@@ -1,7 +1,8 @@
 -- | Vectors
 module Pinecone.Vectors
     ( -- * Main types
-      UpsertVectorsRequest(..)
+      Namespace(..)
+    , UpsertVectorsRequest(..)
     , _UpsertVectorsRequest
     , UpsertVectorsResponse(..)
     , FetchVectors(..)
@@ -26,15 +27,18 @@ module Pinecone.Vectors
 
 import Pinecone.Metadata (Filter, Scalar)
 import Pinecone.Prelude
-import Pinecone.Indexes (Index)
 import Prelude hiding (id)
 
 import qualified Data.Aeson.KeyMap as KeyMap
 
+-- | The namespace of a record
+newtype Namespace = Namespace{ text :: Text }
+    deriving newtype (Eq, FromJSON, IsString, Show, ToHttpApiData, ToJSON)
+
 -- | Request body for @\/vectors\/upsert@
 data UpsertVectorsRequest = UpsertVectorsRequest
     { vectors :: Vector VectorObject
-    , namespace :: Maybe Index
+    , namespace :: Maybe Namespace
     } deriving stock (Eq, Generic, Show)
       deriving anyclass (FromJSON, ToJSON)
 
@@ -53,7 +57,7 @@ data UpsertVectorsResponse = UpsertVectorsResponse
 -- | Response body for @\/vectors\/fetch@
 data FetchVectors = FetchVectors
     { vectors :: Map Text VectorObject
-    , namespace :: Index
+    , namespace :: Namespace
     , usage :: Usage
     } deriving stock (Eq, Generic, Show)
       deriving anyclass (FromJSON, ToJSON)
@@ -64,7 +68,7 @@ data UpdateVector = UpdateVector
     , values :: Maybe (Vector Double)
     , sparseValues :: Maybe SparseValues
     , setMetadata :: Maybe (Map Text Scalar)
-    , namespace :: Maybe Index
+    , namespace :: Maybe Namespace
     } deriving stock (Eq, Generic, Show)
       deriving anyclass (FromJSON, ToJSON)
 
@@ -81,7 +85,7 @@ _UpdateVector = UpdateVector
 data DeleteVectors = DeleteVectors
     { ids :: Maybe (Vector Text)
     , deleteAll :: Maybe Bool
-    , namespace :: Maybe Index
+    , namespace :: Maybe Namespace
     , filter :: Maybe Filter
     } deriving stock (Eq, Generic, Show)
       deriving anyclass (FromJSON, ToJSON)
@@ -98,7 +102,7 @@ _DeleteVectors = DeleteVectors
 data ListVectorIDs = ListVectorIDs
     { vectors :: Vector VectorID
     , pagination :: Pagination
-    , namespace :: Index
+    , namespace :: Namespace
     , usage :: Usage
     } deriving stock (Eq, Generic, Show)
       deriving anyclass (FromJSON, ToJSON)
@@ -173,7 +177,7 @@ type API =
 
           :<|>  (   "fetch"
                 :>  QueryParam' '[Required, Strict] "ids" Text
-                :>  QueryParam "namespace" Index
+                :>  QueryParam "namespace" Namespace
                 :>  Get '[JSON] FetchVectors
                 )
           :<|>  (   "update"
@@ -188,13 +192,13 @@ type API =
                 :>  QueryParam "prefix" Text
                 :>  QueryParam "limit" Natural
                 :>  QueryParam "paginationToken" Text
-                :>  QueryParam "namespace" Index
+                :>  QueryParam "namespace" Namespace
                 :>  Get '[JSON] ListVectorIDs
                 )
           )
     :<|>  (   "records"
           :>  "namespaces"
-          :>  Capture "namespace" Index
+          :>  Capture "namespace" Namespace
           :>  "upsert"
           :>  ReqBody '[JSON] (Vector Record)
           :>  PostCreated '[JSON] NoContent

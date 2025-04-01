@@ -58,6 +58,8 @@ main = do
 
     let Methods{..} = Pinecone.makeMethods clientEnv (Text.pack key)
 
+    let namespace = "test"
+
     let indexesTest =
             HUnit.testCase "Indexes" do
                 let open = do
@@ -156,7 +158,7 @@ main = do
 
                     HUnit.assertEqual "" upsertedCount 1
 
-                    upsertText name
+                    upsertText namespace
                         [ Record
                             { id = "vector-1"
                             , text = "Hello, world!"
@@ -172,7 +174,7 @@ main = do
                         , namespace = Nothing
                         }
 
-                    FetchVectors{ vectors } <- fetchVectors "vector-1" (Just name)
+                    FetchVectors{ vectors } <- fetchVectors "vector-1" (Just namespace)
 
                     case vectors of
                         [   ( "vector-0"
@@ -186,7 +188,7 @@ main = do
                         _ -> do
                             HUnit.assertFailure "GET /vectors/fetch - wrong vectors"
 
-                    ListVectorIDs{ vectors = vectorIDs } <- listVectorIDs Nothing Nothing Nothing (Just name)
+                    ListVectorIDs{ vectors = vectorIDs } <- listVectorIDs Nothing Nothing Nothing (Just namespace)
 
                     deleteVectors DeleteVectors
                         { ids = Just (fmap (\VectorID{ id } -> id) vectorIDs)

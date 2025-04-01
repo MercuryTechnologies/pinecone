@@ -16,15 +16,14 @@ module Pinecone.Search
     , API
     ) where
 
-import Pinecone.Indexes (Index)
 import Pinecone.Metadata (Filter)
 import Pinecone.Prelude
-import Pinecone.Vectors (SparseValues)
+import Pinecone.Vectors (Namespace, SparseValues)
 
 -- | Request body for @\/query@
 data SearchWithVectorRequest = SearchWithVectorRequest
     { topK :: Natural
-    , namespace :: Maybe Index
+    , namespace :: Maybe Namespace
     , filter :: Maybe Filter
     , includeValues :: Maybe Bool
     , includeMetadata :: Maybe Bool
@@ -131,7 +130,7 @@ type API =
           )
     :<|>  (   "records"
           :>  "namespaces"
-          :>  Capture "namespace" Index
+          :>  Capture "namespace" Namespace
           :>  ReqBody '[JSON] SearchWithTextRequest
           :>  Post '[JSON] SearchWithTextResponse
           )
