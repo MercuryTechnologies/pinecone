@@ -24,6 +24,12 @@ import Pinecone.Indexes
     , IndexModels
     , IndexStats
     )
+import Pinecone.Search
+    ( SearchWithTextRequest
+    , SearchWithTextResponse
+    , SearchWithVectorRequest
+    , SearchWithVectorResponse
+    )
 import Pinecone.Vectors
     ( DeleteVectors
     , FetchVectors
@@ -37,6 +43,7 @@ import Pinecone.Vectors
 import qualified Control.Exception as Exception
 import qualified Data.Text as Text
 import qualified Pinecone.Indexes as Indexes
+import qualified Pinecone.Search as Search
 import qualified Pinecone.Vectors as Vectors
 import qualified Network.HTTP.Client.TLS as TLS
 import qualified Servant.Client as Client
@@ -76,6 +83,9 @@ makeMethods clientEnv token = Methods{..}
                   :<|>  listVectorIDs
                   )
             :<|>  upsertText_
+            )
+      :<|>  (     searchWithVector
+            :<|>  searchWithText
             )
       ) = Client.hoistClient @API Proxy run (Client.client @API Proxy) token "2025-01"
 
@@ -120,10 +130,15 @@ data Methods = Methods
         -> Maybe Index
         -- ^ namespace
         -> IO ListVectorIDs
+    , searchWithVector :: SearchWithVectorRequest -> IO SearchWithVectorResponse
+    , searchWithText
+        :: Index
+        -> SearchWithTextRequest
+        -> IO SearchWithTextResponse
     }
 
 -- | Servant API
 type API =
         Header' [ Required, Strict ] "Api-Key" Text
     :>  Header' [ Required, Strict ] "X-Pinecone-API-Version" Text
-    :>  (Indexes.API :<|> Vectors.API)
+    :>  (Indexes.API :<|> Vectors.API :<|> Search.API)

@@ -1,4 +1,4 @@
--- | @\/indexes@
+-- | Indexes
 module Pinecone.Indexes
     ( -- * Main types
       Index(..)
@@ -36,7 +36,7 @@ module Pinecone.Indexes
     , API
     ) where
 
-import Pinecone.Metadata
+import Pinecone.Metadata (Filter)
 import Pinecone.Prelude
 
 import qualified Data.Aeson.KeyMap as KeyMap

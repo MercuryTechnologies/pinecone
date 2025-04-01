@@ -1,0 +1,137 @@
+-- | Search
+module Pinecone.Search
+    ( -- * Main types
+      SearchWithVectorRequest(..)
+    , _SearchWithVectorRequest
+    , SearchWithVectorResponse(..)
+    , SearchWithTextRequest(..)
+    , _SearchWithTextRequest
+    , SearchWithTextResponse(..)
+
+     -- * Other types
+    , Query(..)
+    , VectorQuery(..)
+
+      -- * Servant
+    , API
+    ) where
+
+import Pinecone.Indexes (Index)
+import Pinecone.Metadata (Filter)
+import Pinecone.Prelude
+import Pinecone.Vectors (SparseValues)
+
+-- | Request body for @\/query@
+data SearchWithVectorRequest = SearchWithVectorRequest
+    { topK :: Natural
+    , namespace :: Maybe Index
+    , filter :: Maybe Filter
+    , includeValues :: Maybe Bool
+    , includeMetadata :: Maybe Bool
+    , vector :: Maybe (Vector Double)
+    , sparseVector :: Maybe SparseValues
+    , id :: Maybe Text
+    } deriving stock (Eq, Generic, Show)
+      deriving anyclass (FromJSON, ToJSON)
+
+-- | Default `SearchWithVectorRequest`
+_SearchWithVectorRequest :: SearchWithVectorRequest
+_SearchWithVectorRequest = SearchWithVectorRequest
+    { namespace = Nothing
+    , filter = Nothing
+    , includeValues = Nothing
+    , includeMetadata = Nothing
+    , vector = Nothing
+    , sparseVector = Nothing
+    , id = Nothing
+    }
+
+-- | Response body for @\/query@
+data SearchWithVectorResponse = SearchWithVectorResponse
+    { upsertedCount :: Natural
+    } deriving stock (Eq, Generic, Show)
+      deriving anyclass (FromJSON, ToJSON)
+
+-- | A search request for records in a specific namespace.
+data SearchWithTextRequest = SearchWithTextRequest
+    { query :: Query
+    , fields :: Maybe (Vector Text)
+    , rerank :: Maybe Rerank
+    } deriving stock (Eq, Generic, Show)
+      deriving anyclass (FromJSON, ToJSON)
+
+-- | Default `SearchWithTextRequest`
+_SearchWithTextRequest :: SearchWithTextRequest
+_SearchWithTextRequest = SearchWithTextRequest
+    { fields = Nothing
+    , rerank = Nothing
+    }
+
+-- | A successful search namespace response.
+data SearchWithTextResponse = SearchWithTextResponse
+    { result :: Result
+    , usage :: Usage
+    } deriving stock (Eq, Generic, Show)
+      deriving anyclass (FromJSON, ToJSON)
+
+-- | The query inputs to search with
+data Query = Query
+    { top_k :: Natural
+    , filter :: Maybe Filter
+    , inputs :: Maybe (Map Text Text)
+    , vector :: Maybe VectorQuery
+    } deriving stock (Eq, Generic, Show)
+      deriving anyclass (FromJSON, ToJSON)
+
+-- | Vector query
+data VectorQuery = VectorQuery
+    { values :: Maybe (Vector Double)
+    , sparse_values :: Maybe (Vector Double)
+    , sparse_indices :: Maybe (Vector Natural)
+    } deriving stock (Eq, Generic, Show)
+      deriving anyclass (FromJSON, ToJSON)
+
+-- | Parameters for reranking the initial search results
+data Rerank = Rerank
+    { model :: Text
+    , rank_fields :: Vector Text
+    , top_n :: Maybe Natural
+    , parameters :: Maybe (Map Text Value)
+    , query :: Maybe Text
+    } deriving stock (Eq, Generic, Show)
+      deriving anyclass (FromJSON, ToJSON)
+
+-- | Search result
+data Result = Result
+    { hits :: Vector Hit
+    } deriving stock (Eq, Generic, Show)
+      deriving anyclass (FromJSON, ToJSON)
+
+-- | Hit for the search document request
+data Hit = Hit
+    { _id :: Text
+    , _score :: Double
+    , fields :: Value
+    } deriving stock (Eq, Generic, Show)
+      deriving anyclass (FromJSON, ToJSON)
+
+-- | Usage
+data Usage = Usage
+    { read_units :: Natural
+    , embed_total_tokens :: Maybe Natural
+    , rerank_units :: Maybe Natural
+    } deriving stock (Eq, Generic, Show)
+      deriving anyclass (FromJSON, ToJSON)
+
+-- | Servant API
+type API =
+          (   "query"
+          :>  ReqBody '[JSON] SearchWithVectorRequest
+          :>  Post '[JSON] SearchWithVectorResponse
+          )
+    :<|>  (   "records"
+          :>  "namespaces"
+          :>  Capture "namespace" Index
+          :>  ReqBody '[JSON] SearchWithTextRequest
+          :>  Post '[JSON] SearchWithTextResponse
+          )

@@ -1,4 +1,4 @@
--- | @\/vectors@
+-- | Vectors
 module Pinecone.Vectors
     ( -- * Main types
       UpsertVectorsRequest(..)
@@ -24,9 +24,9 @@ module Pinecone.Vectors
     , API
     ) where
 
-import Pinecone.Metadata
+import Pinecone.Metadata (Filter, Scalar)
 import Pinecone.Prelude
-import Pinecone.Indexes (Index(..))
+import Pinecone.Indexes (Index)
 import Prelude hiding (id)
 
 import qualified Data.Aeson.KeyMap as KeyMap

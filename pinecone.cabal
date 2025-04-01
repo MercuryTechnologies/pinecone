@@ -28,6 +28,7 @@ library
     exposed-modules:    Pinecone
                       , Pinecone.Indexes
                       , Pinecone.Metadata
+                      , Pinecone.Search
                       , Pinecone.Vectors
     other-modules:      Pinecone.Prelude
     default-extensions: BlockArguments
