@@ -19,10 +19,12 @@ library
                       , aeson
                       , containers
                       , http-api-data
+                      , http-client
                       , http-client-tls
                       , scientific
                       , servant
                       , servant-client
+                      , servant-client-core
                       , text
                       , vector
     exposed-modules:    Pinecone
@@ -52,11 +54,9 @@ test-suite tasty
     hs-source-dirs:   tasty
     main-is:          Main.hs
     build-depends:    base
-                    , http-client
-                    , http-client-tls
                     , pinecone
-                    , servant-client
                     , tasty
                     , tasty-hunit
                     , text
+                    , vector
     ghc-options:      -Wall

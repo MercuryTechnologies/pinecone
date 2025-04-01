@@ -48,6 +48,7 @@ import Servant.API
     , PostCreated
     , QueryParam
     , QueryParam'
+    , QueryParams
     , ReqBody
     , Required
     , Strict

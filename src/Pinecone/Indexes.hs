@@ -2,6 +2,7 @@
 module Pinecone.Indexes
     ( -- * Main types
       Index(..)
+    , Host(..)
     , IndexModels(..)
     , IndexModel(..)
     , CreateIndex(..)
@@ -33,7 +34,8 @@ module Pinecone.Indexes
     , Contents(..)
 
       -- * API
-    , API
+    , ControlAPI
+    , DataAPI
     ) where
 
 import Pinecone.Metadata (Filter)
@@ -44,6 +46,10 @@ import qualified Data.Text as Text
 
 -- | The name of the index
 newtype Index = Index{ text :: Text }
+    deriving newtype (Eq, FromJSON, IsString, Show, ToHttpApiData, ToJSON)
+
+-- | The host for the index
+newtype Host = Host{ text :: Text }
     deriving newtype (Eq, FromJSON, IsString, Show, ToHttpApiData, ToJSON)
 
 -- | The list of indexes that exist in the project
@@ -57,7 +63,7 @@ data IndexModels = IndexModels
 data IndexModel = IndexModel
     { name :: Index
     , metric :: Metric
-    , host :: Text
+    , host :: Host
     , spec :: Spec
     , status :: Status
     , vector_type :: VectorType
@@ -333,34 +339,34 @@ data Contents = Contents
       deriving anyclass (FromJSON, ToJSON)
 
 -- | Servant API
-type API =
-          (   "indexes"
-          :>  (     Get '[JSON] IndexModels
+type ControlAPI =
+        "indexes"
+    :>  (     Get '[JSON] IndexModels
 
-              :<|>  (   ReqBody '[JSON] CreateIndex
-                    :>  Post '[JSON] IndexModel
-                    )
-
-              :<|>  (   "create-for-model"
-                    :>  ReqBody '[JSON] CreateIndexWithEmbedding
-                    :>  PostCreated '[JSON] IndexModel
-                    )
-
-              :<|>  (   Capture "index_name" Index
-                    :>  Get '[JSON] IndexModel
-                    )
-
-              :<|>  (   Capture "index_name" Index
-                    :>  DeleteAccepted '[JSON] NoContent
-                    )
-
-              :<|>  (   Capture "index_name" Index
-                    :>  ReqBody '[JSON] ConfigureIndex
-                    :>  Patch '[JSON] IndexModel
-                    )
+        :<|>  (   ReqBody '[JSON] CreateIndex
+              :>  Post '[JSON] IndexModel
               )
-          )
-    :<|>  (   "describe_index_stats"
-          :>  ReqBody '[JSON] GetIndexStats
-          :>  Post '[JSON] IndexStats
-          )
+
+        :<|>  (   "create-for-model"
+              :>  ReqBody '[JSON] CreateIndexWithEmbedding
+              :>  PostCreated '[JSON] IndexModel
+              )
+
+        :<|>  (   Capture "index_name" Index
+              :>  Get '[JSON] IndexModel
+              )
+
+        :<|>  (   Capture "index_name" Index
+              :>  DeleteAccepted '[JSON] NoContent
+              )
+
+        :<|>  (   Capture "index_name" Index
+              :>  ReqBody '[JSON] ConfigureIndex
+              :>  Patch '[JSON] IndexModel
+              )
+        )
+
+type DataAPI =
+        "describe_index_stats"
+    :>  ReqBody '[JSON] GetIndexStats
+    :>  Post '[JSON] IndexStats

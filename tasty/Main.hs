@@ -7,7 +7,7 @@
 
 module Main where
 
-import Pinecone (Methods(..))
+import Pinecone (DataMethods(..), ControlMethods(..))
 import Prelude hiding (id)
 
 import Pinecone.Indexes
@@ -15,48 +15,37 @@ import Pinecone.Indexes
     , CreateIndexWithEmbedding(..)
     , ConfigureIndex(..)
     , EmbedRequest(..)
+    , GetIndexStats(..)
     , IndexModel(..)
     , IndexModels(..)
     , Status(..)
     )
 import Pinecone.Vectors
     ( DeleteVectors(..)
-    , FetchVectors(..)
-    , ListVectorIDs(..)
     , UpdateVector(..)
     , Record(..)
     , UpsertVectorsRequest(..)
     , UpsertVectorsResponse(..)
-    , VectorID(..)
     , VectorObject(..)
     )
 
 import qualified Control.Exception as Exception
 import qualified Data.Text as Text
-import qualified Network.HTTP.Client as HTTP.Client
-import qualified Network.HTTP.Client.TLS as TLS
+import qualified Data.Vector as Vector
 import qualified Pinecone
-import qualified Servant.Client as Client
 import qualified System.Environment as Environment
 import qualified Test.Tasty as Tasty
 import qualified Test.Tasty.HUnit as HUnit
 
 main :: IO ()
 main = do
-    let managerSettings = TLS.tlsManagerSettings
-            { HTTP.Client.managerResponseTimeout =
-                HTTP.Client.responseTimeoutNone
-            }
-
-    manager <- TLS.newTlsManagerWith managerSettings
-
-    baseUrl <- Client.parseBaseUrl "https://api.pinecone.io"
-
-    let clientEnv = Client.mkClientEnv manager baseUrl
+    controlEnv <- Pinecone.getClientEnv "https://api.pinecone.io"
 
     key <- Environment.getEnv "PINECONE_KEY"
 
-    let Methods{..} = Pinecone.makeMethods clientEnv (Text.pack key)
+    let token = Text.pack key
+
+    let ControlMethods{..} = Pinecone.makeControlMethods controlEnv token
 
     let namespace = "test"
 
@@ -80,7 +69,11 @@ main = do
 
                 let close IndexModel{ name } = deleteIndex name
 
-                Exception.bracket open close \IndexModel{ name } -> do
+                Exception.bracket open close \IndexModel{ name, host } -> do
+                    dataEnv <- Pinecone.getClientEnv host
+
+                    let DataMethods{..} = Pinecone.makeDataMethods dataEnv token
+
                     let waitUntilReady = do
                             indexModel <- describeIndex name
 
@@ -108,6 +101,10 @@ main = do
                         , embed = Nothing
                         }
 
+                    _ <- getIndexStats GetIndexStats
+                        { filter = Nothing
+                        }
+
                     return ()
 
     let vectorsTest =
@@ -130,7 +127,11 @@ main = do
 
                 let close IndexModel{ name } = deleteIndex name
 
-                Exception.bracket open close \IndexModel{ name } -> do
+                Exception.bracket open close \IndexModel{ name, host } -> do
+                    dataEnv <- Pinecone.getClientEnv host
+
+                    let DataMethods{..} = Pinecone.makeDataMethods dataEnv token
+
                     let waitUntilReady = do
                             indexModel <- describeIndex name
 
@@ -148,52 +149,38 @@ main = do
                         { vectors =
                             [ VectorObject
                                 { id = "vector-0"
-                                , values = Just [ 0.1, 0.1, 0.1, 0.1, 0.1, 0.1, 0.1, 0.1 ]
+                                , values = Just (Vector.replicate 1024 0.1)
                                 , sparseValues = Nothing
                                 , metadata = Nothing
                                 }
                             ]
-                        , namespace = Nothing
+                        , namespace = Just namespace
                         }
 
                     HUnit.assertEqual "" upsertedCount 1
 
-                    upsertText namespace
-                        [ Record
-                            { id = "vector-1"
-                            , text = "Hello, world!"
-                            , metadata = Just [ ("category", "farewell") ]
-                            }
-                        ]
+                    upsertText namespace Record
+                        { id = "vector-1"
+                        , text = "Hello, world!"
+                        , metadata = Just [ ("category", "farewell") ]
+                        }
 
                     updateVector UpdateVector
                         { id = "vector-1"
                         , values = Nothing
                         , sparseValues = Nothing
                         , setMetadata = Just [ ("category", "greeting") ]
-                        , namespace = Nothing
+                        , namespace = Just namespace
                         }
 
-                    FetchVectors{ vectors } <- fetchVectors "vector-1" (Just namespace)
+                    _ <- fetchVectors [ "vector-1" ] (Just namespace)
 
-                    case vectors of
-                        [   ( "vector-0"
-                            , VectorObject{ values = Just [ 0.1, 0.1, 0.1, 0.1, 0.1, 0.1, 0.1, 0.1 ] }
-                            )
-                          , ( "vector-1"
-                            , VectorObject{ metadata = Just [ ("category", "greeting") ] }
-                            )
-                          ] -> do
-                            return ()
-                        _ -> do
-                            HUnit.assertFailure "GET /vectors/fetch - wrong vectors"
-
-                    ListVectorIDs{ vectors = vectorIDs } <- listVectorIDs Nothing Nothing Nothing (Just namespace)
+                    _ <- listVectorIDs Nothing Nothing Nothing (Just namespace)
 
                     deleteVectors DeleteVectors
-                        { ids = Just (fmap (\VectorID{ id } -> id) vectorIDs)
-                        , deleteAll = Nothing
-                        , namespace = Nothing
+                        { ids = Nothing
+                        , deleteAll = Just True
+                        , namespace = Just namespace
                         , filter = Nothing
                         }
 

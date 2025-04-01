@@ -29,8 +29,6 @@ import Pinecone.Metadata (Filter, Scalar)
 import Pinecone.Prelude
 import Prelude hiding (id)
 
-import qualified Data.Aeson.KeyMap as KeyMap
-
 -- | The namespace of a record
 newtype Namespace = Namespace{ text :: Text }
     deriving newtype (Eq, FromJSON, IsString, Show, ToHttpApiData, ToJSON)
@@ -58,7 +56,7 @@ data UpsertVectorsResponse = UpsertVectorsResponse
 data FetchVectors = FetchVectors
     { vectors :: Map Text VectorObject
     , namespace :: Namespace
-    , usage :: Usage
+    , usage :: Maybe Usage
     } deriving stock (Eq, Generic, Show)
       deriving anyclass (FromJSON, ToJSON)
 
@@ -101,7 +99,7 @@ _DeleteVectors = DeleteVectors
 -- | Response body for @\/vectors\/list@
 data ListVectorIDs = ListVectorIDs
     { vectors :: Vector VectorID
-    , pagination :: Pagination
+    , pagination :: Maybe Pagination
     , namespace :: Namespace
     , usage :: Usage
     } deriving stock (Eq, Generic, Show)
@@ -115,7 +113,7 @@ data Record = Record
     } deriving stock (Eq, Generic, Show)
 
 instance ToJSON Record where
-    toJSON Record{..} = Object (KeyMap.union reserved nonReserved)
+    toJSON Record{..} = Object (reserved <> nonReserved)
       where
         reserved =
             [ ("_id", toJSON id)
@@ -126,7 +124,7 @@ instance ToJSON Record where
             Nothing -> []
             Just m -> case toJSON m of
                 Object o -> o
-                _ -> KeyMap.empty
+                _ -> []
 
 -- | Default `Record`
 _Record :: Record
@@ -168,38 +166,41 @@ data Pagination = Pagination
 
 -- | Servant API
 type API =
-          (     (   "vectors"
-                :>  (   "upsert"
+          (   "vectors"
+          :>  (     (   "upsert"
                     :>  ReqBody '[JSON] UpsertVectorsRequest
                     :>  Post '[JSON] UpsertVectorsResponse
                     )
-                )
 
-          :<|>  (   "fetch"
-                :>  QueryParam' '[Required, Strict] "ids" Text
-                :>  QueryParam "namespace" Namespace
-                :>  Get '[JSON] FetchVectors
-                )
-          :<|>  (   "update"
-                :>  ReqBody '[JSON] UpdateVector
-                :>  Post '[JSON] NoContent
-                )
-          :<|>  (   "delete"
-                :>  ReqBody '[JSON] DeleteVectors
-                :>  Post '[JSON] NoContent
-                )
-          :<|>  (   "list"
-                :>  QueryParam "prefix" Text
-                :>  QueryParam "limit" Natural
-                :>  QueryParam "paginationToken" Text
-                :>  QueryParam "namespace" Namespace
-                :>  Get '[JSON] ListVectorIDs
-                )
+              :<|>  (   "fetch"
+                    :>  QueryParams "ids" Text
+                    :>  QueryParam "namespace" Namespace
+                    :>  Get '[JSON] FetchVectors
+                    )
+
+              :<|>  (   "update"
+                    :>  ReqBody '[JSON] UpdateVector
+                    :>  Post '[JSON] NoContent
+                    )
+
+              :<|>  (   "delete"
+                    :>  ReqBody '[JSON] DeleteVectors
+                    :>  Post '[JSON] NoContent
+                    )
+
+              :<|>  (   "list"
+                    :>  QueryParam "prefix" Text
+                    :>  QueryParam "limit" Natural
+                    :>  QueryParam "paginationToken" Text
+                    :>  QueryParam "namespace" Namespace
+                    :>  Get '[JSON] ListVectorIDs
+                    )
+              )
           )
     :<|>  (   "records"
           :>  "namespaces"
           :>  Capture "namespace" Namespace
           :>  "upsert"
-          :>  ReqBody '[JSON] (Vector Record)
+          :>  ReqBody '[JSON] Record
           :>  PostCreated '[JSON] NoContent
           )
