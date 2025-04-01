@@ -34,10 +34,10 @@ import Pinecone.Vectors
     ( DeleteVectors
     , FetchVectors
     , ListVectorIDs
+    , Record
     , UpdateVector
     , UpsertVectorsRequest
     , UpsertVectorsResponse
-    , UpsertText
     )
 
 import qualified Control.Exception as Exception
@@ -111,7 +111,7 @@ data Methods = Methods
     , configureIndex :: Index -> ConfigureIndex -> IO IndexModel
     , getIndexStats :: GetIndexStats -> IO IndexStats
     , upsertVectors :: UpsertVectorsRequest -> IO UpsertVectorsResponse
-    , upsertText :: Index -> UpsertText -> IO ()
+    , upsertText :: Index -> Vector Record -> IO ()
     , fetchVectors
         :: Text
         -- ^ IDs

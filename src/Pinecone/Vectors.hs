@@ -10,8 +10,8 @@ module Pinecone.Vectors
     , DeleteVectors(..)
     , _DeleteVectors
     , ListVectorIDs(..)
-    , UpsertText(..)
-    , _UpsertText
+    , Record(..)
+    , _Record
 
       -- * Other types
     , VectorObject(..)
@@ -103,15 +103,15 @@ data ListVectorIDs = ListVectorIDs
     } deriving stock (Eq, Generic, Show)
       deriving anyclass (FromJSON, ToJSON)
 
--- | Request body for @\/records\/namespaces\/:namespace\/upsert@
-data UpsertText = UpsertText
+-- | Record to upsert
+data Record = Record
     { id :: Text
     , text :: Text
     , metadata :: Maybe (Map Text Scalar)
     } deriving stock (Eq, Generic, Show)
 
-instance ToJSON UpsertText where
-    toJSON UpsertText{..} = Object (KeyMap.union reserved nonReserved)
+instance ToJSON Record where
+    toJSON Record{..} = Object (KeyMap.union reserved nonReserved)
       where
         reserved =
             [ ("_id", toJSON id)
@@ -124,9 +124,9 @@ instance ToJSON UpsertText where
                 Object o -> o
                 _ -> KeyMap.empty
 
--- | Default `UpsertText`
-_UpsertText :: UpsertText
-_UpsertText = UpsertText{ }
+-- | Default `Record`
+_Record :: Record
+_Record = Record{ }
 
 -- | A vector
 data VectorObject = VectorObject
@@ -196,6 +196,6 @@ type API =
           :>  "namespaces"
           :>  Capture "namespace" Index
           :>  "upsert"
-          :>  ReqBody '[JSON] UpsertText
+          :>  ReqBody '[JSON] (Vector Record)
           :>  PostCreated '[JSON] NoContent
           )

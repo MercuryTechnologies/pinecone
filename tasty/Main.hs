@@ -24,7 +24,7 @@ import Pinecone.Vectors
     , FetchVectors(..)
     , ListVectorIDs(..)
     , UpdateVector(..)
-    , UpsertText(..)
+    , Record(..)
     , UpsertVectorsRequest(..)
     , UpsertVectorsResponse(..)
     , VectorID(..)
@@ -156,11 +156,13 @@ main = do
 
                     HUnit.assertEqual "" upsertedCount 1
 
-                    upsertText name UpsertText
-                        { id = "vector-1"
-                        , text = "Hello, world!"
-                        , metadata = Just [ ("category", "farewell") ]
-                        }
+                    upsertText name
+                        [ Record
+                            { id = "vector-1"
+                            , text = "Hello, world!"
+                            , metadata = Just [ ("category", "farewell") ]
+                            }
+                        ]
 
                     updateVector UpdateVector
                         { id = "vector-1"
@@ -189,7 +191,7 @@ main = do
                     deleteVectors DeleteVectors
                         { ids = Just (fmap (\VectorID{ id } -> id) vectorIDs)
                         , deleteAll = Nothing
-                        , namespace = Just name
+                        , namespace = Nothing
                         , filter = Nothing
                         }
 
