@@ -30,6 +30,7 @@ library
                       , vector
     exposed-modules:    Pinecone
                       , Pinecone.Backups
+                      , Pinecone.Embed
                       , Pinecone.Imports
                       , Pinecone.Indexes
                       , Pinecone.Metadata

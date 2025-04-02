@@ -15,22 +15,15 @@ module Pinecone
 import Data.Foldable (toList)
 import Data.Functor (void)
 import Data.Proxy (Proxy(..))
+import Pinecone.Embed (GenerateVectors, Embeddings)
 import Pinecone.Prelude
 import Servant.Client (ClientEnv)
+import Servant.Client.Core (BaseUrl(..), Scheme(..))
 
 import Pinecone.Backups
-    ( CreateCollection
-    , Collection
-    , CollectionModel
-    , ListCollections
-    )
+    (CreateCollection, Collection, CollectionModel, ListCollections)
 import Pinecone.Imports
-    ( Import
-    , ImportModel
-    , ListImports
-    , StartImportRequest
-    , StartImportResponse
-    )
+    (Import, ImportModel, ListImports, StartImportRequest, StartImportResponse)
 import Pinecone.Indexes
     ( ConfigureIndex
     , CreateIndex
@@ -58,11 +51,11 @@ import Pinecone.Vectors
     , UpsertVectorsRequest
     , UpsertVectorsResponse
     )
-import Servant.Client.Core (BaseUrl(..), Scheme(..))
 
 import qualified Control.Exception as Exception
 import qualified Data.Text as Text
 import qualified Pinecone.Backups as Backups
+import qualified Pinecone.Embed as Embed
 import qualified Pinecone.Imports as Imports
 import qualified Pinecone.Indexes as Indexes
 import qualified Pinecone.Search as Search
@@ -128,6 +121,7 @@ makeControlMethods clientEnv token = ControlMethods{..}
             :<|>  describeCollection
             :<|>  deleteCollection_
             )
+      :<|>  generateVectors
       ) = Client.hoistClient @ControlAPI Proxy (run clientEnv) (Client.client @ControlAPI Proxy) token apiVersion
 
     deleteIndex a = void (deleteIndex_ a)
@@ -186,6 +180,7 @@ data ControlMethods = ControlMethods
     , createCollection :: CreateCollection -> IO CollectionModel
     , describeCollection :: Collection -> IO CollectionModel
     , deleteCollection :: Collection -> IO ()
+    , generateVectors :: GenerateVectors -> IO Embeddings
     }
 
 -- | Data plane methods
@@ -232,7 +227,7 @@ data DataMethods = DataMethods
 type ControlAPI =
         Header' [ Required, Strict ] "Api-Key" Text
     :>  Header' [ Required, Strict ] "X-Pinecone-API-Version" Text
-    :>  (Indexes.ControlAPI :<|> Backups.API)
+    :>  (Indexes.ControlAPI :<|> Backups.API :<|> Embed.API)
 
 -- | Index operations
 type DataAPI =

@@ -27,7 +27,6 @@ module Pinecone.Indexes
     , Cloud(..)
     , Status(..)
     , State(..)
-    , VectorType(..)
     , DeletionProtection(..)
     , EmbedRequest(..)
     , EmbedResponse(..)
@@ -38,6 +37,7 @@ module Pinecone.Indexes
     , DataAPI
     ) where
 
+import Pinecone.Embed (VectorType)
 import Pinecone.Metadata (Filter)
 import Pinecone.Prelude
 
@@ -281,16 +281,6 @@ instance FromJSON State where
 
 instance ToJSON State where
     toJSON = genericToJSON aesonOptions{ constructorTagModifier = id }
-
--- | The index vector type
-data VectorType = Dense | Sparse
-    deriving stock (Eq, Generic, Show)
-
-instance FromJSON VectorType where
-    parseJSON = genericParseJSON aesonOptions
-
-instance ToJSON VectorType where
-    toJSON = genericToJSON aesonOptions
 
 -- | Whether deletion protection is enabled/disabled for the index.
 data DeletionProtection = Disabled | Enabled

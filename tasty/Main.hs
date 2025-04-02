@@ -8,6 +8,7 @@
 module Main where
 
 import Pinecone (DataMethods(..), ControlMethods(..))
+import Pinecone.Embed (GenerateVectors(..), Input(..))
 import Prelude hiding (id)
 
 import Pinecone.Indexes
@@ -79,6 +80,12 @@ main = do
             let close IndexModel{ name } = deleteIndex name
 
             Exception.bracket open close \IndexModel{ name, host } -> do
+                _ <- generateVectors GenerateVectors
+                    { model = "llama-text-embed-v2"
+                    , inputs = [ Input{ text = "Hello, world!" } ]
+                    , parameters = [ ("input_type", "query") ]
+                    }
+
                 dataEnv <- Pinecone.getClientEnv host
 
                 let DataMethods{..} = Pinecone.makeDataMethods dataEnv token

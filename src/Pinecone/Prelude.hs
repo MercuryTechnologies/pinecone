@@ -2,6 +2,7 @@ module Pinecone.Prelude
     ( -- * JSON
       aesonOptions
     , labelModifier
+    , stripPrefix
 
       -- * Re-exports
     , module Data.Aeson
@@ -36,6 +37,7 @@ import Data.Aeson
     , Key
     , Object
     , Options(..)
+    , SumEncoding(..)
     , ToJSON(..)
     , Value(..)
     )
@@ -61,6 +63,7 @@ import Servant.API
     )
 
 import qualified Data.Aeson as Aeson
+import qualified Data.List as List
 import qualified Data.Char as Char
 
 dropTrailingUnderscore :: String -> String
@@ -70,6 +73,13 @@ dropTrailingUnderscore (c : cs) = c : dropTrailingUnderscore cs
 
 labelModifier :: String -> String
 labelModifier = map Char.toLower . dropTrailingUnderscore
+
+stripPrefix :: String -> String -> String
+stripPrefix prefix string = labelModifier suffix
+  where
+    suffix = case List.stripPrefix prefix string of
+        Nothing -> string
+        Just x  -> x
 
 aesonOptions :: Options
 aesonOptions = Aeson.defaultOptions
