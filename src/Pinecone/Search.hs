@@ -9,14 +9,21 @@ module Pinecone.Search
     , SearchWithTextResponse(..)
 
      -- * Other types
+    , Match(..)
     , Query(..)
     , VectorQuery(..)
+    , Rerank(..)
+    , Result(..)
+    , Hit(..)
+    , Usage(..)
 
       -- * Servant
     , API
     ) where
 
-import Pinecone.Metadata (Filter)
+import Data.Aeson ((.=))
+import Prelude hiding (filter)
+import Pinecone.Metadata (Filter, Scalar)
 import Pinecone.Prelude
 import Pinecone.Vectors (Namespace, SparseValues)
 
@@ -47,7 +54,9 @@ _SearchWithVectorRequest = SearchWithVectorRequest
 
 -- | Response body for @\/query@
 data SearchWithVectorResponse = SearchWithVectorResponse
-    { upsertedCount :: Natural
+    { matches :: Vector Match
+    , namespace :: Namespace
+    , usage :: Usage
     } deriving stock (Eq, Generic, Show)
       deriving anyclass (FromJSON, ToJSON)
 
@@ -73,14 +82,51 @@ data SearchWithTextResponse = SearchWithTextResponse
     } deriving stock (Eq, Generic, Show)
       deriving anyclass (FromJSON, ToJSON)
 
+data Match = Match
+    { id :: Text
+    , score :: Maybe Double
+    , values :: Maybe (Vector Double)
+    , sparseValues :: Maybe SparseValues
+    , metadata :: Maybe (Map Text Scalar)
+    } deriving stock (Eq, Generic, Show)
+      deriving anyclass (FromJSON, ToJSON)
+
 -- | The query inputs to search with
 data Query = Query
     { top_k :: Natural
     , filter :: Maybe Filter
-    , inputs :: Maybe (Map Text Text)
+    , input :: Maybe Text
     , vector :: Maybe VectorQuery
     } deriving stock (Eq, Generic, Show)
-      deriving anyclass (FromJSON, ToJSON)
+
+instance FromJSON Query where
+    parseJSON value = do
+        object <- parseJSON @Object value
+        case object of
+            [   ("inputs", Object [("text", inputValue)])
+              , ("filter", filterValue)
+              , ("top_k", top_kValue)
+              , ("vector", vectorValue)
+              ] -> do
+                input <- parseJSON inputValue
+                filter <- parseJSON filterValue
+                top_k <- parseJSON top_kValue
+                vector <- parseJSON vectorValue
+                return Query{..}
+            _ -> do
+                fail ""
+
+instance ToJSON Query where
+    toJSON Query{..} =
+        Object
+            (   "top_k" .= top_k
+            <>  "filter" .?=  filter
+            <>  "inputs" .?=  Just ([("text", toJSON input)] :: Object)
+            <>  "vector" .?=  vector
+            )
+      where
+        _   .?= Nothing = []
+        key .?= Just value = key .= toJSON value
 
 -- | Vector query
 data VectorQuery = VectorQuery
@@ -116,7 +162,7 @@ data Hit = Hit
 
 -- | Usage
 data Usage = Usage
-    { read_units :: Natural
+    { read_units :: Maybe Natural
     , embed_total_tokens :: Maybe Natural
     , rerank_units :: Maybe Natural
     } deriving stock (Eq, Generic, Show)
@@ -131,6 +177,7 @@ type API =
     :<|>  (   "records"
           :>  "namespaces"
           :>  Capture "namespace" Namespace
+          :>  "search"
           :>  ReqBody '[JSON] SearchWithTextRequest
           :>  Post '[JSON] SearchWithTextResponse
           )

@@ -32,6 +32,7 @@ import Data.Aeson
     , genericParseJSON
     , FromJSON(..)
     , Key
+    , Object
     , Options(..)
     , ToJSON(..)
     , Value(..)
