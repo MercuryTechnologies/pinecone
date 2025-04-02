@@ -29,9 +29,11 @@ library
                       , time
                       , vector
     exposed-modules:    Pinecone
+                      , Pinecone.Backups
                       , Pinecone.Imports
                       , Pinecone.Indexes
                       , Pinecone.Metadata
+                      , Pinecone.Pagination
                       , Pinecone.Search
                       , Pinecone.Vectors
     other-modules:      Pinecone.Prelude

@@ -82,6 +82,7 @@ data SearchWithTextResponse = SearchWithTextResponse
     } deriving stock (Eq, Generic, Show)
       deriving anyclass (FromJSON, ToJSON)
 
+-- | Match for a vector
 data Match = Match
     { id :: Text
     , score :: Maybe Double

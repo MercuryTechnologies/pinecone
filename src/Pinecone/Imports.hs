@@ -8,6 +8,11 @@ module Pinecone.Imports
     , ListImports(..)
     , ImportModel(..)
 
+      -- * Other types
+    , ErrorMode(..)
+    , OnError(..)
+    , Status(..)
+
       -- * Servant
     , API
     ) where

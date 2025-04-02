@@ -18,6 +18,12 @@ import Data.Proxy (Proxy(..))
 import Pinecone.Prelude
 import Servant.Client (ClientEnv)
 
+import Pinecone.Backups
+    ( CreateCollection
+    , Collection
+    , CollectionModel
+    , ListCollections
+    )
 import Pinecone.Imports
     ( Import
     , ImportModel
@@ -56,6 +62,7 @@ import Servant.Client.Core (BaseUrl(..), Scheme(..))
 
 import qualified Control.Exception as Exception
 import qualified Data.Text as Text
+import qualified Pinecone.Backups as Backups
 import qualified Pinecone.Imports as Imports
 import qualified Pinecone.Indexes as Indexes
 import qualified Pinecone.Search as Search
@@ -109,15 +116,22 @@ makeControlMethods
     -> ControlMethods
 makeControlMethods clientEnv token = ControlMethods{..}
   where
-    (       listIndexes
-      :<|>  createIndex
-      :<|>  createIndexWithEmbedding
-      :<|>  describeIndex
-      :<|>  deleteIndex_
-      :<|>  configureIndex
+    (       (     listIndexes
+            :<|>  createIndex
+            :<|>  createIndexWithEmbedding
+            :<|>  describeIndex
+            :<|>  deleteIndex_
+            :<|>  configureIndex
+            )
+      :<|>  (     listCollections
+            :<|>  createCollection
+            :<|>  describeCollection
+            :<|>  deleteCollection_
+            )
       ) = Client.hoistClient @ControlAPI Proxy (run clientEnv) (Client.client @ControlAPI Proxy) token apiVersion
 
     deleteIndex a = void (deleteIndex_ a)
+    deleteCollection a = void (deleteCollection_ a)
 
 -- | Get a record of control API methods after providing an API token
 makeDataMethods
@@ -160,7 +174,7 @@ run clientEnv clientM = do
         Left exception -> Exception.throwIO exception
         Right a -> return a
 
--- | API methods
+-- | Control plane methods
 data ControlMethods = ControlMethods
     { listIndexes :: IO IndexModels
     , createIndex :: CreateIndex -> IO IndexModel
@@ -168,8 +182,13 @@ data ControlMethods = ControlMethods
     , describeIndex :: Index -> IO IndexModel
     , deleteIndex :: Index -> IO ()
     , configureIndex :: Index -> ConfigureIndex -> IO IndexModel
+    , listCollections :: IO ListCollections
+    , createCollection :: CreateCollection -> IO CollectionModel
+    , describeCollection :: Collection -> IO CollectionModel
+    , deleteCollection :: Collection -> IO ()
     }
 
+-- | Data plane methods
 data DataMethods = DataMethods
     { getIndexStats :: GetIndexStats -> IO IndexStats
     , upsertVectors :: UpsertVectorsRequest -> IO UpsertVectorsResponse
@@ -213,7 +232,7 @@ data DataMethods = DataMethods
 type ControlAPI =
         Header' [ Required, Strict ] "Api-Key" Text
     :>  Header' [ Required, Strict ] "X-Pinecone-API-Version" Text
-    :>  Indexes.ControlAPI
+    :>  (Indexes.ControlAPI :<|> Backups.API)
 
 -- | Index operations
 type DataAPI =

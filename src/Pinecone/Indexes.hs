@@ -338,7 +338,7 @@ data Contents = Contents
     } deriving stock (Eq, Generic, Show)
       deriving anyclass (FromJSON, ToJSON)
 
--- | Servant API
+-- | Control API
 type ControlAPI =
         "indexes"
     :>  (     Get '[JSON] IndexModels
@@ -366,6 +366,7 @@ type ControlAPI =
               )
         )
 
+-- | Data API
 type DataAPI =
         "describe_index_stats"
     :>  ReqBody '[JSON] GetIndexStats
