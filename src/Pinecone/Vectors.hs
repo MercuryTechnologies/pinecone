@@ -24,13 +24,12 @@ module Pinecone.Vectors
     , API
     ) where
 
-import GHC.IsList (IsList(..))
 import Pinecone.Metadata (Filter, Scalar)
 import Pinecone.Pagination (Pagination)
 import Pinecone.Prelude
 import Prelude hiding (id)
 
-import qualified Control.Monad as Monad
+import qualified Data.Map as Map
 
 -- | The namespace of a record
 newtype Namespace = Namespace{ text :: Text }
@@ -117,48 +116,26 @@ data Record = Record
 
 instance FromJSON Record where
     parseJSON value = do
-        object <- parseJSON value
+        m <- parseJSON value
 
-        let keyValues = toList @Object object
-
-        text <- case lookup "text" keyValues of
+        text <- case Map.lookup "text" m of
             Nothing -> do
                 fail "Missing text field"
             Just v -> do
                 parseJSON v
 
-        id <- case lookup "_id" keyValues of
+        id <- case Map.lookup "_id" m of
             Nothing -> do
                 fail "Missing id field"
             Just v -> do
                 parseJSON v
 
-        let filtered = do
-                (key, v) <- keyValues
-
-                Monad.guard (notElem @[] @_ key [ "_id", "text" ])
-
-                return (key, v)
-
-        let process (key, v) = do
-                scalar <- parseJSON v
-
-                return (key, scalar)
-
-        metadata <- case filtered of
-            [] -> do
-                return Nothing
-            _ -> do
-                keyScalars <- traverse process filtered
-
-                m <- parseJSON (Object (fromList keyScalars))
-
-                return (Just m)
+        metadata <- fmap Just (traverse parseJSON (Map.delete "_id" (Map.delete "text" m)))
 
         return Record{..}
 
 instance ToJSON Record where
-    toJSON Record{..} = toJSON (reserved <> nonReserved)
+    toJSON Record{..} = toJSON (Map.union reserved nonReserved)
       where
         reserved =
             [ ("_id", toJSON id)
@@ -166,10 +143,8 @@ instance ToJSON Record where
             ]
 
         nonReserved = case metadata of
-            Nothing -> []
-            Just m -> case toJSON m of
-                Object o -> o
-                _ -> []
+            Nothing -> Map.empty
+            Just m -> Map.map toJSON m
 
 -- | Default `Record`
 _Record :: Record

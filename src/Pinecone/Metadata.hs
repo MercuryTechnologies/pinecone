@@ -6,8 +6,6 @@ module Pinecone.Metadata
 
 import Pinecone.Prelude
 
-import qualified Data.Aeson as Aeson
-
 -- | A scalar value used for metadata filters
 data Scalar
     = ScalarNumber Scientific
@@ -51,76 +49,92 @@ instance FromJSON Scalar where
 
 -- | Metadata query language
 data Filter
-    = Equal Key Scalar
-    | NotEqual Key Scalar
-    | GreaterThan Key Scientific
-    | GreaterThanOrEqual Key Scientific
-    | LessThan Key Scientific
-    | LessThanOrEqual Key Scientific
-    | In Key Scalar
-    | NotIn Key Scalar
-    | Exists Key Bool
+    = Equal Text Scalar
+    | NotEqual Text Scalar
+    | GreaterThan Text Scientific
+    | GreaterThanOrEqual Text Scientific
+    | LessThan Text Scientific
+    | LessThanOrEqual Text Scientific
+    | In Text Scalar
+    | NotIn Text Scalar
+    | Exists Text Bool
     | And (Vector Filter)
     | Or (Vector Filter)
     deriving stock (Eq, Generic, Show)
 
 instance ToJSON Filter where
     toJSON (Equal field literal) =
-        Object [ (field, Object [ ("$eq", toJSON literal) ]) ]
+        toJSON @(Map Text (Map Text Scalar)) [ (field, [ ("$eq", literal) ]) ]
     toJSON (NotEqual field literal) =
-        Object [ (field, Object [ ("$ne", toJSON literal) ]) ]
+        toJSON @(Map Text (Map Text Scalar)) [ (field, [ ("$ne", literal) ]) ]
     toJSON (GreaterThan field literal) =
-        Object [ (field, Object [ ("$gt", toJSON literal) ]) ]
+        toJSON @(Map Text (Map Text Scientific)) [ (field, [ ("$gt", literal) ]) ]
     toJSON (GreaterThanOrEqual field literal) =
-        Object [ (field, Object [ ("$gte", toJSON literal) ]) ]
+        toJSON @(Map Text (Map Text Scientific)) [ (field, [ ("$gte", literal) ]) ]
     toJSON (LessThan field literal) =
-        Object [ (field, Object [ ("$lt", toJSON literal) ]) ]
+        toJSON @(Map Text (Map Text Scientific)) [ (field, [ ("$lt", literal) ]) ]
     toJSON (LessThanOrEqual field literal) =
-        Object [ (field, Object [ ("$lte", toJSON literal) ]) ]
+        toJSON @(Map Text (Map Text Scientific)) [ (field, [ ("$lte", literal) ]) ]
     toJSON (In field literal) =
-        Object [ (field, Object [ ("$in", toJSON literal) ]) ]
+        toJSON @(Map Text (Map Text Scalar)) [ (field, [ ("$in", literal) ]) ]
     toJSON (NotIn field literal) =
-        Object [ (field, Object [ ("$nin", toJSON literal) ]) ]
+        toJSON @(Map Text (Map Text Scalar)) [ (field, [ ("$nin", literal) ]) ]
     toJSON (Exists field literal) =
-        Object [ (field, Object [ ("$exists", toJSON literal) ]) ]
+        toJSON @(Map Text (Map Text Bool)) [ (field, [ ("$exists", literal) ]) ]
     toJSON (And clauses) =
-        Object [ ("$and", toJSON clauses) ]
+        toJSON @(Map Text (Vector Filter)) [ ("$and", clauses) ]
     toJSON (Or clauses) =
-        Object [ ("$or", toJSON clauses) ]
+        toJSON @(Map Text (Vector Filter)) [ ("$or", clauses) ]
 
 instance FromJSON Filter where
-    parseJSON =
-        Aeson.withObject "Filter" \object -> do
-            case object of
-                [ (field, Object [ ("$eq", value) ]) ] -> do
-                    literal <- parseJSON value
-                    pure (Equal field literal)
-                [ (field, Object [ ("$ne", value) ]) ] -> do
-                    literal <- parseJSON value
-                    pure (NotEqual field literal)
-                [ (field, Object [ ("$gt", value) ]) ] -> do
-                    literal <- parseJSON value
-                    pure (GreaterThan field literal)
-                [ (field, Object [ ("$gte", value) ]) ] -> do
-                    literal <- parseJSON value
-                    pure (GreaterThanOrEqual field literal)
-                [ (field, Object [ ("$lt", value) ]) ] -> do
-                    literal <- parseJSON value
-                    pure (LessThan field literal)
-                [ (field, Object [ ("$lte", value) ]) ] -> do
-                    literal <- parseJSON value
-                    pure (LessThanOrEqual field literal)
-                [ (field, Object [ ("$in", value) ]) ] -> do
-                    literal <- parseJSON value
-                    pure (In field literal)
-                [ (field, Object [ ("$nin", value) ]) ] -> do
-                    literal <- parseJSON value
-                    pure (NotIn field literal)
-                [ ("$and", value) ] -> do
-                    clauses <- parseJSON value
-                    pure (And clauses)
-                [ ("$or", value) ] -> do
-                    clauses <- parseJSON value
-                    pure (Or clauses)
-                _ -> do
-                    fail "Invalid filter"
+    parseJSON v =
+            parseEqual v
+        <|> parseNotEqual v
+        <|> parseGreaterThan v
+        <|> parseGreaterThanOrEqual v
+        <|> parseLessThan v
+        <|> parseLessThanOrEqual v
+        <|> parseIn v
+        <|> parseNotIn v
+        <|> parseAnd v
+        <|> parseOr v
+      where
+        parseEqual value = do
+            [ (field, [ ("$eq", literal) ]) ] <- parseJSON @(Map Text (Map Text Scalar)) value
+            return (Equal field literal)
+
+        parseNotEqual value = do
+            [ (field, [ ("$ne", literal) ]) ] <- parseJSON @(Map Text (Map Text Scalar)) value
+            return (NotEqual field literal)
+
+        parseGreaterThan value = do
+            [ (field, [ ("$gt", literal) ]) ] <- parseJSON @(Map Text (Map Text Scientific)) value
+            return (GreaterThan field literal)
+
+        parseGreaterThanOrEqual value = do
+            [ (field, [ ("$gte", literal) ]) ] <- parseJSON @(Map Text (Map Text Scientific)) value
+            return (GreaterThanOrEqual field literal)
+
+        parseLessThan value = do
+            [ (field, [ ("$lt", literal) ]) ] <- parseJSON @(Map Text (Map Text Scientific)) value
+            return (LessThan field literal)
+
+        parseLessThanOrEqual value = do
+            [ (field, [ ("$lte", literal) ]) ] <- parseJSON @(Map Text (Map Text Scientific)) value
+            return (LessThanOrEqual field literal)
+
+        parseIn value = do
+            [ (field, [ ("$in", literal) ]) ] <- parseJSON @(Map Text (Map Text Scalar)) value
+            return (In field literal)
+
+        parseNotIn value = do
+            [ (field, [ ("$nin", literal) ]) ] <- parseJSON @(Map Text (Map Text Scalar)) value
+            return (NotIn field literal)
+
+        parseAnd value = do
+            [ ("$and", clauses) ] <- parseJSON @(Map Text (Vector Filter)) value
+            return (And clauses)
+
+        parseOr value = do
+            [ ("$or", clauses) ] <- parseJSON @(Map Text (Vector Filter)) value
+            return (Or clauses)

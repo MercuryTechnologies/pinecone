@@ -5,6 +5,7 @@ module Pinecone.Prelude
     , stripPrefix
 
       -- * Re-exports
+    , module Control.Applicative
     , module Data.Aeson
     , module Data.Aeson.Types
     , module Data.Map
@@ -19,6 +20,7 @@ module Pinecone.Prelude
     , module Web.HttpApiData
     ) where
 
+import Control.Applicative (Alternative(..))
 import Data.Aeson.Types (typeMismatch)
 import Data.Map (Map)
 import Data.Scientific (Scientific)
@@ -34,7 +36,6 @@ import Data.Aeson
     ( genericToJSON
     , genericParseJSON
     , FromJSON(..)
-    , Key
     , Object
     , Options(..)
     , SumEncoding(..)
