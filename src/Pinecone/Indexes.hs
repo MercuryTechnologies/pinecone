@@ -41,7 +41,6 @@ import Pinecone.Embed (VectorType)
 import Pinecone.Metadata (Filter)
 import Pinecone.Prelude
 
-import qualified Data.Aeson.KeyMap as KeyMap
 import qualified Data.Text as Text
 
 -- | The name of the index
@@ -295,20 +294,25 @@ instance ToJSON DeletionProtection where
 -- | Specify the integrated inference embedding configuration for the index
 data EmbedRequest = EmbedRequest
     { model :: Text
-    , field_map :: Map Text Text
     , metric :: Maybe Metric
     , read_parameters :: Maybe (Map Text Value)
     , write_parameters :: Maybe (Map Text Value)
     } deriving stock (Eq, Generic, Show)
       deriving anyclass (FromJSON)
 
+data EmbedRequest_ = EmbedRequest_
+    { model :: Text
+    , field_map :: Map Text Text
+    , metric :: Maybe Metric
+    , read_parameters :: Maybe (Map Text Value)
+    , write_parameters :: Maybe (Map Text Value)
+    } deriving stock (Eq, Generic, Show)
+      deriving anyclass (FromJSON, ToJSON)
+
 instance ToJSON EmbedRequest where
-    toJSON embedRequest =
-        Object (KeyMap.insert "field_map" (Object [ ("text", "text") ]) object)
+    toJSON EmbedRequest{..} = toJSON EmbedRequest_{..}
       where
-        object = case genericToJSON aesonOptions embedRequest of
-            Object o -> o
-            _ -> KeyMap.empty
+        field_map = [ ("text", "text") ]
 
 -- | The embedding model and document fields mapped to embedding inputs
 data EmbedResponse = EmbedResponse

@@ -21,8 +21,8 @@ module Pinecone.Search
     , API
     ) where
 
-import Data.Aeson ((.=))
 import Prelude hiding (filter)
+import Pinecone.Embed (Input(..))
 import Pinecone.Metadata (Filter, Scalar)
 import Pinecone.Prelude
 import Pinecone.Vectors (Namespace, SparseValues)
@@ -100,34 +100,31 @@ data Query = Query
     , vector :: Maybe VectorQuery
     } deriving stock (Eq, Generic, Show)
 
+data Query_ = Query_
+    { top_k :: Natural
+    , filter :: Maybe Filter
+    , inputs :: Maybe Input
+    , vector :: Maybe VectorQuery
+    } deriving stock (Eq, Generic, Show)
+      deriving anyclass (FromJSON, ToJSON)
+
 instance FromJSON Query where
     parseJSON value = do
-        object <- parseJSON @Object value
-        case object of
-            [   ("inputs", Object [("text", inputValue)])
-              , ("filter", filterValue)
-              , ("top_k", top_kValue)
-              , ("vector", vectorValue)
-              ] -> do
-                input <- parseJSON inputValue
-                filter <- parseJSON filterValue
-                top_k <- parseJSON top_kValue
-                vector <- parseJSON vectorValue
-                return Query{..}
-            _ -> do
-                fail ""
+        Query_{..} <- parseJSON value
+
+        let input = do
+                Input{..} <- inputs
+                return text
+
+        return Query{..}
 
 instance ToJSON Query where
-    toJSON Query{..} =
-        Object
-            (   "top_k" .= top_k
-            <>  "filter" .?=  filter
-            <>  "inputs" .?=  Just ([("text", toJSON input)] :: Object)
-            <>  "vector" .?=  vector
-            )
+    toJSON Query{..} = toJSON Query_{..}
       where
-        _   .?= Nothing = []
-        key .?= Just value = key .= toJSON value
+        inputs = do
+            text <- input
+
+            return Input{..}
 
 -- | Vector query
 data VectorQuery = VectorQuery

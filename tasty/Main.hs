@@ -69,7 +69,6 @@ main = do
                         , region = "us-east-1"
                         , embed = EmbedRequest
                             { model = "llama-text-embed-v2"
-                            , field_map = [ ("text", "contents") ]
                             , metric = Nothing
                             , read_parameters = Nothing
                             , write_parameters = Nothing
