@@ -18,6 +18,13 @@ import Data.Proxy (Proxy(..))
 import Pinecone.Prelude
 import Servant.Client (ClientEnv)
 
+import Pinecone.Imports
+    ( Import
+    , ImportModel
+    , ListImports
+    , StartImportRequest
+    , StartImportResponse
+    )
 import Pinecone.Indexes
     ( ConfigureIndex
     , CreateIndex
@@ -49,6 +56,7 @@ import Servant.Client.Core (BaseUrl(..), Scheme(..))
 
 import qualified Control.Exception as Exception
 import qualified Data.Text as Text
+import qualified Pinecone.Imports as Imports
 import qualified Pinecone.Indexes as Indexes
 import qualified Pinecone.Search as Search
 import qualified Pinecone.Vectors as Vectors
@@ -132,12 +140,18 @@ makeDataMethods clientEnv token = DataMethods{..}
       :<|>  (     searchWithVector
             :<|>  searchWithText
             )
+      :<|>  (     startImport
+            :<|>  listImports
+            :<|>  describeImport
+            :<|>  cancelImport_
+            )
       ) = Client.hoistClient @DataAPI Proxy (run clientEnv) (Client.client @DataAPI Proxy) token apiVersion
 
     fetchVectors a = fetchVectors_ (toList a)
     updateVector a = void (updateVector_ a)
     deleteVectors a = void (deleteVectors_ a)
     upsertText a b = void (upsertText_ a b)
+    cancelImport a = void (cancelImport_ a)
 
 run :: Client.ClientEnv -> Client.ClientM a -> IO a
 run clientEnv clientM = do
@@ -183,6 +197,16 @@ data DataMethods = DataMethods
         :: Namespace
         -> SearchWithTextRequest
         -> IO SearchWithTextResponse
+    , startImport
+        :: StartImportRequest -> IO StartImportResponse
+    , listImports
+        :: Maybe Natural
+        -- ^ limit
+        -> Maybe Text
+        -- ^ paginationToken
+        -> IO ListImports
+    , describeImport :: Import -> IO ImportModel
+    , cancelImport :: Import -> IO ()
     }
 
 -- | Index management
@@ -195,4 +219,4 @@ type ControlAPI =
 type DataAPI =
         Header' [ Required, Strict ] "Api-Key" Text
     :>  Header' [ Required, Strict ] "X-Pinecone-API-Version" Text
-    :>  (Indexes.DataAPI :<|> Vectors.API :<|> Search.API)
+    :>  (Indexes.DataAPI :<|> Vectors.API :<|> Search.API :<|> Imports.API)

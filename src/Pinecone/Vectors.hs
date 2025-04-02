@@ -19,13 +19,13 @@ module Pinecone.Vectors
     , SparseValues(..)
     , VectorID(..)
     , Usage(..)
-    , Pagination(..)
 
       -- * Servant
     , API
     ) where
 
 import Pinecone.Metadata (Filter, Scalar)
+import Pinecone.Pagination (Pagination)
 import Pinecone.Prelude
 import Prelude hiding (id)
 
@@ -155,12 +155,6 @@ data VectorID = VectorID
 -- | Usage
 data Usage = Usage
     { readUnits :: Natural
-    } deriving stock (Eq, Generic, Show)
-      deriving anyclass (FromJSON, ToJSON)
-
--- | Pagination
-data Pagination = Pagination
-    { next :: Text
     } deriving stock (Eq, Generic, Show)
       deriving anyclass (FromJSON, ToJSON)
 

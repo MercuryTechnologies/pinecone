@@ -10,6 +10,7 @@ module Pinecone.Prelude
     , module Data.Scientific
     , module Data.String
     , module Data.Text
+    , module Data.Time.Clock.POSIX
     , module Data.Vector
     , module GHC.Generics
     , module Numeric.Natural
@@ -22,6 +23,7 @@ import Data.Map (Map)
 import Data.Scientific (Scientific)
 import Data.String (IsString(..))
 import Data.Text (Text)
+import Data.Time.Clock.POSIX (POSIXTime)
 import Data.Vector (Vector)
 import GHC.Generics (Generic)
 import Numeric.Natural (Natural)
@@ -39,6 +41,7 @@ import Data.Aeson
     )
 import Servant.API
     ( Capture
+    , Delete
     , DeleteAccepted
     , Get
     , Header'

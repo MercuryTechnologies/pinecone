@@ -26,8 +26,10 @@ library
                       , servant-client
                       , servant-client-core
                       , text
+                      , time
                       , vector
     exposed-modules:    Pinecone
+                      , Pinecone.Imports
                       , Pinecone.Indexes
                       , Pinecone.Metadata
                       , Pinecone.Search
