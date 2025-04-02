@@ -24,10 +24,13 @@ module Pinecone.Vectors
     , API
     ) where
 
+import GHC.IsList (IsList(..))
 import Pinecone.Metadata (Filter, Scalar)
 import Pinecone.Pagination (Pagination)
 import Pinecone.Prelude
 import Prelude hiding (id)
+
+import qualified Control.Monad as Monad
 
 -- | The namespace of a record
 newtype Namespace = Namespace{ text :: Text }
@@ -112,8 +115,50 @@ data Record = Record
     , metadata :: Maybe (Map Text Scalar)
     } deriving stock (Eq, Generic, Show)
 
+instance FromJSON Record where
+    parseJSON value = do
+        object <- parseJSON value
+
+        let keyValues = toList @Object object
+
+        text <- case lookup "text" keyValues of
+            Nothing -> do
+                fail "Missing text field"
+            Just v -> do
+                parseJSON v
+
+        id <- case lookup "_id" keyValues of
+            Nothing -> do
+                fail "Missing id field"
+            Just v -> do
+                parseJSON v
+
+        let filtered = do
+                (key, v) <- keyValues
+
+                Monad.guard (notElem @[] @_ key [ "_id", "text" ])
+
+                return (key, v)
+
+        let process (key, v) = do
+                scalar <- parseJSON v
+
+                return (key, scalar)
+
+        metadata <- case filtered of
+            [] -> do
+                return Nothing
+            _ -> do
+                keyScalars <- traverse process filtered
+
+                m <- parseJSON (Object (fromList keyScalars))
+
+                return (Just m)
+
+        return Record{..}
+
 instance ToJSON Record where
-    toJSON Record{..} = Object (reserved <> nonReserved)
+    toJSON Record{..} = toJSON (reserved <> nonReserved)
       where
         reserved =
             [ ("_id", toJSON id)

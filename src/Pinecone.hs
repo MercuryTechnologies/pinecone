@@ -17,6 +17,7 @@ import Data.Functor (void)
 import Data.Proxy (Proxy(..))
 import Pinecone.Embed (GenerateVectors, Embeddings)
 import Pinecone.Prelude
+import Pinecone.Rerank (Documents(..), RerankResults(..))
 import Servant.Client (ClientEnv)
 import Servant.Client.Core (BaseUrl(..), Scheme(..))
 
@@ -58,6 +59,7 @@ import qualified Pinecone.Backups as Backups
 import qualified Pinecone.Embed as Embed
 import qualified Pinecone.Imports as Imports
 import qualified Pinecone.Indexes as Indexes
+import qualified Pinecone.Rerank as Rerank
 import qualified Pinecone.Search as Search
 import qualified Pinecone.Vectors as Vectors
 import qualified Network.HTTP.Client as HTTP.Client
@@ -122,6 +124,7 @@ makeControlMethods clientEnv token = ControlMethods{..}
             :<|>  deleteCollection_
             )
       :<|>  generateVectors
+      :<|>  rerankResults
       ) = Client.hoistClient @ControlAPI Proxy (run clientEnv) (Client.client @ControlAPI Proxy) token apiVersion
 
     deleteIndex a = void (deleteIndex_ a)
@@ -181,6 +184,7 @@ data ControlMethods = ControlMethods
     , describeCollection :: Collection -> IO CollectionModel
     , deleteCollection :: Collection -> IO ()
     , generateVectors :: GenerateVectors -> IO Embeddings
+    , rerankResults :: RerankResults -> IO Documents
     }
 
 -- | Data plane methods
@@ -227,7 +231,7 @@ data DataMethods = DataMethods
 type ControlAPI =
         Header' [ Required, Strict ] "Api-Key" Text
     :>  Header' [ Required, Strict ] "X-Pinecone-API-Version" Text
-    :>  (Indexes.ControlAPI :<|> Backups.API :<|> Embed.API)
+    :>  (Indexes.ControlAPI :<|> Backups.API :<|> Embed.API :<|> Rerank.API)
 
 -- | Index operations
 type DataAPI =

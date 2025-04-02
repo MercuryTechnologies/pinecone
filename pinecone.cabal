@@ -35,6 +35,7 @@ library
                       , Pinecone.Indexes
                       , Pinecone.Metadata
                       , Pinecone.Pagination
+                      , Pinecone.Rerank
                       , Pinecone.Search
                       , Pinecone.Vectors
     other-modules:      Pinecone.Prelude

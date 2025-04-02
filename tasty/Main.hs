@@ -9,6 +9,7 @@ module Main where
 
 import Pinecone (DataMethods(..), ControlMethods(..))
 import Pinecone.Embed (GenerateVectors(..), Input(..))
+import Pinecone.Rerank (RerankResults(..))
 import Prelude hiding (id)
 
 import Pinecone.Indexes
@@ -84,6 +85,21 @@ main = do
                     { model = "llama-text-embed-v2"
                     , inputs = [ Input{ text = "Hello, world!" } ]
                     , parameters = [ ("input_type", "query") ]
+                    }
+
+                _ <- rerankResults RerankResults
+                    { model = "bge-reranker-v2-m3"
+                    , query = "best greeting"
+                    , documents =
+                        [ Record
+                            { id = "vector-0"
+                            , text = "Hello, world"
+                            , metadata = Nothing
+                            }
+                        ]
+                    , top_n = Nothing
+                    , return_documents = True
+                    , parameters = [ ]
                     }
 
                 dataEnv <- Pinecone.getClientEnv host
