@@ -11,6 +11,7 @@ module Pinecone.Search
      -- * Other types
     , Match(..)
     , Query(..)
+    , _Query
     , VectorQuery(..)
     , Rerank(..)
     , Result(..)
@@ -125,6 +126,14 @@ instance ToJSON Query where
             text <- input
 
             return Input{..}
+
+-- | Default `Query`
+_Query :: Query
+_Query = Query
+    { filter = Nothing
+    , input = Nothing
+    , vector = Nothing
+    }
 
 -- | Vector query
 data VectorQuery = VectorQuery

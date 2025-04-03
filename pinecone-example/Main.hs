@@ -1,10 +1,3 @@
-# `pinecone`
-
-This provides a binding to Pinecone's API using `servant`
-
-Example usage:
-
-```haskell
 {-# LANGUAGE BlockArguments #-}
 {-# LANGUAGE DuplicateRecordFields #-}
 {-# LANGUAGE NamedFieldPuns #-}
@@ -82,4 +75,3 @@ main = do
         let Result{ hits } = result
 
         print (fmap _id hits) -- ["hi"]
-```

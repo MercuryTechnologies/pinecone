@@ -148,7 +148,9 @@ instance ToJSON Record where
 
 -- | Default `Record`
 _Record :: Record
-_Record = Record{ }
+_Record = Record
+    { metadata = Nothing
+    }
 
 -- | A vector
 data VectorObject = VectorObject
