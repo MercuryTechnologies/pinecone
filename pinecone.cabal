@@ -5,6 +5,11 @@ synopsis:           Servant bindings to Pinecone
 description:        This package provides comprehensive and type-safe bindings
                     to Pinecone, providing both a Servant interface and
                     non-Servant interface for convenience.
+                    .
+                    Read the @README@ below for a fully worked usage example.
+                    .
+                    Otherwise, browse the "Pinecone" module, which is the
+                    intended package entrypoint.
 license:            BSD-3-Clause
 license-file:       LICENSE
 author:             Gabriella Gonzalez
