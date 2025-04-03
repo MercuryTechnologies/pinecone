@@ -17,7 +17,6 @@ module Pinecone.Vectors
       -- * Other types
     , VectorObject(..)
     , SparseValues(..)
-    , VectorID(..)
     , Usage(..)
 
       -- * Servant
@@ -100,6 +99,19 @@ _DeleteVectors = DeleteVectors
 
 -- | Response body for @\/vectors\/list@
 data VectorIDs = VectorIDs
+    { vectors :: Vector Text
+    , pagination :: Maybe Pagination
+    , namespace :: Namespace
+    , usage :: Usage
+    } deriving stock (Eq, Generic, Show)
+
+instance FromJSON VectorIDs where
+    parseJSON value = do
+        VectorIDs_{..} <- parseJSON value
+
+        return VectorIDs{ vectors = do VectorID{ id } <- vectors; return id, ..}
+
+data VectorIDs_ = VectorIDs_
     { vectors :: Vector VectorID
     , pagination :: Maybe Pagination
     , namespace :: Namespace

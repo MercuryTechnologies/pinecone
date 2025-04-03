@@ -9,7 +9,7 @@ module Main where
 
 import Pinecone (DataMethods(..), ControlMethods(..))
 import Pinecone.Embed (GenerateVectors(..))
-import Pinecone.Rerank (RerankResults(..))
+import Pinecone.Rerank (Document(..), Documents(..), RerankResults(..))
 import Prelude hiding (id)
 
 import Pinecone.Indexes
@@ -23,7 +23,8 @@ import Pinecone.Indexes
     , Status(..)
     )
 import Pinecone.Search
-    ( Hits(..)
+    ( Hit(..)
+    , Hits(..)
     , Matches(..)
     , Query(..)
     , SearchWithText(..)
@@ -35,7 +36,9 @@ import Pinecone.Vectors
     , UpdateVector(..)
     , UpsertVectors(..)
     , UpsertStats(..)
+    , VectorIDs(..)
     , VectorObject(..)
+    , Vectors(..)
     )
 
 import qualified Control.Exception as Exception
@@ -84,17 +87,23 @@ main = do
                     , parameters = [ ("input_type", "query") ]
                     }
 
-                _ <- rerankResults RerankResults
+                let hello = Record
+                        { id = "hi"
+                        , text = "Hello, world"
+                        , metadata = Nothing
+                        }
+
+                let goodbye = Record
+                        { id = "bye"
+                        , text = "Goodbye, world"
+                        , metadata = Nothing
+                        }
+
+                Documents{ data_ = [ Document{ document = Just Record{ id = "hi" } } ] } <- rerankResults RerankResults
                     { model = "bge-reranker-v2-m3"
                     , query = "best greeting"
-                    , documents =
-                        [ Record
-                            { id = "vector-0"
-                            , text = "Hello, world"
-                            , metadata = Nothing
-                            }
-                        ]
-                    , top_n = Nothing
+                    , documents = [ hello, goodbye ]
+                    , top_n = Just 1
                     , return_documents = True
                     , parameters = [ ]
                     }
@@ -130,6 +139,8 @@ main = do
                     , embed = Nothing
                     }
 
+                IndexModel{ tags = Just [ ("foo", "bar") ] } <- describeIndex name
+
                 UpsertStats{..} <- upsertVectors UpsertVectors
                     { vectors =
                         [ VectorObject
@@ -144,14 +155,19 @@ main = do
 
                 HUnit.assertEqual "" 1 upsertedCount
 
-                upsertText namespace Record
-                    { id = "vector-1"
-                    , text = "Hello, world!"
-                    , metadata = Just [ ("category", "farewell") ]
+                deleteVectors DeleteVectors
+                    { ids = Just [ "vector-0" ]
+                    , deleteAll = Nothing
+                    , namespace = Just namespace
+                    , filter = Nothing
                     }
 
+                upsertText namespace hello
+
+                upsertText namespace goodbye
+
                 updateVector UpdateVector
-                    { id = "vector-1"
+                    { id = "hi"
                     , values = Nothing
                     , sparseValues = Nothing
                     , setMetadata = Just [ ("category", "greeting") ]
@@ -169,11 +185,11 @@ main = do
 
                 waitUntilVectorsReady
 
-                _ <- fetchVectors [ "vector-1" ] (Just namespace)
+                Vectors{ vectors = [ ("bye", _), ("hi", _) ] } <- fetchVectors [ "hi", "bye" ] (Just namespace)
 
-                _ <- listVectorIDs Nothing Nothing Nothing (Just namespace)
+                VectorIDs{ vectors = [ "bye", "hi" ] } <- listVectorIDs Nothing Nothing Nothing (Just namespace)
 
-                Hits{ hits } <- searchWithText namespace SearchWithText
+                Hits{ hits = [ Hit{ _id = "hi" } ] } <- searchWithText namespace SearchWithText
                     { query = Query
                         { top_k = 1
                         , filter = Nothing
@@ -183,8 +199,6 @@ main = do
                     , fields = Nothing
                     , rerank = Nothing
                     }
-
-                HUnit.assertEqual "" 1 (Vector.length hits)
 
                 Matches{ matches } <- searchWithVector SearchWithVector
                     { topK = 1
