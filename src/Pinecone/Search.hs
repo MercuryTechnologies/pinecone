@@ -1,12 +1,12 @@
 -- | Search
 module Pinecone.Search
     ( -- * Main types
-      SearchWithVectorRequest(..)
-    , _SearchWithVectorRequest
-    , SearchWithVectorResponse(..)
-    , SearchWithTextRequest(..)
-    , _SearchWithTextRequest
-    , SearchWithTextResponse(..)
+      SearchWithVector(..)
+    , _SearchWithVector
+    , Matches(..)
+    , SearchWithText(..)
+    , _SearchWithText
+    , Hits(..)
 
      -- * Other types
     , Match(..)
@@ -14,7 +14,6 @@ module Pinecone.Search
     , _Query
     , VectorQuery(..)
     , Rerank(..)
-    , Result(..)
     , Hit(..)
     , Usage(..)
 
@@ -29,7 +28,7 @@ import Pinecone.Prelude
 import Pinecone.Vectors (Namespace, SparseValues)
 
 -- | Request body for @\/query@
-data SearchWithVectorRequest = SearchWithVectorRequest
+data SearchWithVector = SearchWithVector
     { topK :: Natural
     , namespace :: Maybe Namespace
     , filter :: Maybe Filter
@@ -41,9 +40,9 @@ data SearchWithVectorRequest = SearchWithVectorRequest
     } deriving stock (Eq, Generic, Show)
       deriving anyclass (FromJSON, ToJSON)
 
--- | Default `SearchWithVectorRequest`
-_SearchWithVectorRequest :: SearchWithVectorRequest
-_SearchWithVectorRequest = SearchWithVectorRequest
+-- | Default `SearchWithVector`
+_SearchWithVector :: SearchWithVector
+_SearchWithVector = SearchWithVector
     { namespace = Nothing
     , filter = Nothing
     , includeValues = Nothing
@@ -54,7 +53,7 @@ _SearchWithVectorRequest = SearchWithVectorRequest
     }
 
 -- | Response body for @\/query@
-data SearchWithVectorResponse = SearchWithVectorResponse
+data Matches = Matches
     { matches :: Vector Match
     , namespace :: Namespace
     , usage :: Usage
@@ -62,22 +61,40 @@ data SearchWithVectorResponse = SearchWithVectorResponse
       deriving anyclass (FromJSON, ToJSON)
 
 -- | A search request for records in a specific namespace.
-data SearchWithTextRequest = SearchWithTextRequest
+data SearchWithText = SearchWithText
     { query :: Query
     , fields :: Maybe (Vector Text)
     , rerank :: Maybe Rerank
     } deriving stock (Eq, Generic, Show)
       deriving anyclass (FromJSON, ToJSON)
 
--- | Default `SearchWithTextRequest`
-_SearchWithTextRequest :: SearchWithTextRequest
-_SearchWithTextRequest = SearchWithTextRequest
+-- | Default `SearchWithText`
+_SearchWithText :: SearchWithText
+_SearchWithText = SearchWithText
     { fields = Nothing
     , rerank = Nothing
     }
 
 -- | A successful search namespace response.
-data SearchWithTextResponse = SearchWithTextResponse
+data Hits = Hits
+    { usage :: Usage
+    , hits :: Vector Hit
+    } deriving stock (Eq, Generic, Show)
+
+instance FromJSON Hits where
+    parseJSON value = do
+        Hits_{..} <- parseJSON value
+
+        let Result{..} = result
+
+        return Hits{..}
+
+instance ToJSON Hits where
+    toJSON Hits{..} = toJSON Hits_{..}
+      where
+        result = Result{..}
+
+data Hits_ = Hits_
     { result :: Result
     , usage :: Usage
     } deriving stock (Eq, Generic, Show)
@@ -178,13 +195,13 @@ data Usage = Usage
 -- | Servant API
 type API =
           (   "query"
-          :>  ReqBody '[JSON] SearchWithVectorRequest
-          :>  Post '[JSON] SearchWithVectorResponse
+          :>  ReqBody '[JSON] SearchWithVector
+          :>  Post '[JSON] Matches
           )
     :<|>  (   "records"
           :>  "namespaces"
           :>  Capture "namespace" Namespace
           :>  "search"
-          :>  ReqBody '[JSON] SearchWithTextRequest
-          :>  Post '[JSON] SearchWithTextResponse
+          :>  ReqBody '[JSON] SearchWithText
+          :>  Post '[JSON] Hits
           )

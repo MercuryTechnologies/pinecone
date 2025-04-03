@@ -66,12 +66,10 @@ main = do
 
         waitUntilVectorsReady
 
-        SearchWithTextResponse{ result } <- searchWithText "test" SearchWithTextRequest
+        Hits{ hits } <- searchWithText "test" SearchWithText
             { query = _Query{ top_k = 1, input = Just "best greeting"  }
             , fields = Nothing
             , rerank = Nothing
             }
-
-        let Result{ hits } = result
 
         print (fmap _id hits) -- ["hi"]

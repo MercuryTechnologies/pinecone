@@ -1,3 +1,4 @@
+-- | Rerank
 module Pinecone.Rerank
     ( -- * Main types
       RerankResults(..)
@@ -5,7 +6,7 @@ module Pinecone.Rerank
     , Documents(..)
 
       -- * Other types
-    , RankedDocument(..)
+    , Document(..)
     , Usage(..)
 
       -- * Servant
@@ -52,7 +53,7 @@ _RerankResults = RerankResults
 -- | The result of a reranking request.
 data Documents = Documents
     { model :: Text
-    , data_ :: Vector RankedDocument
+    , data_ :: Vector Document
     , usage :: Usage
     } deriving stock (Eq, Generic, Show)
 
@@ -63,7 +64,7 @@ instance ToJSON Documents where
     toJSON = genericToJSON aesonOptions
 
 -- | A ranked document with a relevance score and an index position.
-data RankedDocument = RankedDocument
+data Document = Document
     { index :: Natural
     , score :: Double
     , document :: Maybe Record
@@ -76,5 +77,6 @@ data Usage = Usage
     } deriving stock (Eq, Generic, Show)
       deriving anyclass (FromJSON, ToJSON)
 
+-- | Servant API
 type API =
     "rerank" :> ReqBody '[JSON] RerankResults :> Post '[JSON] Documents

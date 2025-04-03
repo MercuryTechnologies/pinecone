@@ -2,10 +2,10 @@
 module Pinecone.Imports
     ( -- * Main types
       Import(..)
-    , StartImportRequest(..)
-    , _StartImportRequest
+    , StartImport(..)
+    , _StartImport
     , StartImportResponse(..)
-    , ListImports(..)
+    , Imports(..)
     , ImportModel(..)
 
       -- * Other types
@@ -26,16 +26,16 @@ newtype Import = Import{ text :: Text }
     deriving newtype (Eq, FromJSON, IsString, Show, ToHttpApiData, ToJSON)
 
 -- | Request body for @\/bulk\/imports@
-data StartImportRequest = StartImportRequest
+data StartImport = StartImport
     { uri :: Text
     , integrationId :: Maybe Text
     , errorMode :: Maybe ErrorMode
     } deriving stock (Eq, Generic, Show)
       deriving anyclass (FromJSON, ToJSON)
 
--- | Default `StartImportRequest`
-_StartImportRequest :: StartImportRequest
-_StartImportRequest = StartImportRequest
+-- | Default `StartImport`
+_StartImport :: StartImport
+_StartImport = StartImport
     { integrationId = Nothing
     , errorMode = Nothing
     }
@@ -47,15 +47,15 @@ data StartImportResponse = StartImportResponse
       deriving anyclass (FromJSON, ToJSON)
 
 -- | A list of import operations
-data ListImports = ListImport
+data Imports = ListImport
     { data_ :: Vector ImportModel
     , pagination :: Maybe Pagination
     } deriving stock (Eq, Generic, Show)
 
-instance FromJSON ListImports where
+instance FromJSON Imports where
     parseJSON = genericParseJSON aesonOptions
 
-instance ToJSON ListImports where
+instance ToJSON Imports where
     toJSON = genericToJSON aesonOptions
 
 -- | The model for an import operation.
@@ -106,12 +106,12 @@ instance ToJSON Status where
 type API =
         "bulk"
     :>  "imports"
-    :>  (         ReqBody '[JSON] StartImportRequest
+    :>  (         ReqBody '[JSON] StartImport
               :>  Post '[JSON] StartImportResponse
 
         :<|>      QueryParam "limit" Natural
               :>  QueryParam "paginationToken" Text
-              :>  Get '[JSON] ListImports
+              :>  Get '[JSON] Imports
 
         :<|>      Capture "id" Import
               :>  Get '[JSON] ImportModel

@@ -2,7 +2,7 @@
 module Pinecone.Backups
     ( -- * Main types
       Collection(..)
-    , ListCollections(..)
+    , Collections(..)
     , CreateCollection(..)
     , _CreateCollection
     , CollectionModel(..)
@@ -22,7 +22,7 @@ newtype Collection = Collection{ text :: Text }
     deriving newtype (Eq, FromJSON, IsString, Show, ToHttpApiData, ToJSON)
 
 -- | The list of collections that exist in the project.
-data ListCollections = ListCollections
+data Collections = Collections
     { collections :: Vector CollectionModel
     } deriving stock (Eq, Generic, Show)
       deriving anyclass (FromJSON, ToJSON)
@@ -65,7 +65,7 @@ instance ToJSON Status where
 -- | Servant API
 type API =
         "collections"
-    :>  (     Get '[JSON] ListCollections
+    :>  (     Get '[JSON] Collections
 
         :<|>      ReqBody '[JSON] CreateCollection
               :>  Post '[JSON] CollectionModel

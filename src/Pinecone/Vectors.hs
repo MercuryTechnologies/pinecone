@@ -2,15 +2,15 @@
 module Pinecone.Vectors
     ( -- * Main types
       Namespace(..)
-    , UpsertVectorsRequest(..)
-    , _UpsertVectorsRequest
-    , UpsertVectorsResponse(..)
-    , FetchVectors(..)
+    , UpsertVectors(..)
+    , _UpsertVectors
+    , UpsertStats(..)
+    , Vectors(..)
     , UpdateVector(..)
     , _UpdateVector
     , DeleteVectors(..)
     , _DeleteVectors
-    , ListVectorIDs(..)
+    , VectorIDs(..)
     , Record(..)
     , _Record
 
@@ -36,26 +36,26 @@ newtype Namespace = Namespace{ text :: Text }
     deriving newtype (Eq, FromJSON, IsString, Show, ToHttpApiData, ToJSON)
 
 -- | Request body for @\/vectors\/upsert@
-data UpsertVectorsRequest = UpsertVectorsRequest
+data UpsertVectors = UpsertVectors
     { vectors :: Vector VectorObject
     , namespace :: Maybe Namespace
     } deriving stock (Eq, Generic, Show)
       deriving anyclass (FromJSON, ToJSON)
 
--- | Default `UpsertVectorsRequest`
-_UpsertVectorsRequest :: UpsertVectorsRequest
-_UpsertVectorsRequest = UpsertVectorsRequest
+-- | Default `UpsertVectors`
+_UpsertVectors :: UpsertVectors
+_UpsertVectors = UpsertVectors
     { namespace = Nothing
     }
 
 -- | Response body for @\/vectors\/upsert@
-data UpsertVectorsResponse = UpsertVectorsResponse
+data UpsertStats = UpsertStats
     { upsertedCount :: Natural
     } deriving stock (Eq, Generic, Show)
       deriving anyclass (FromJSON, ToJSON)
 
 -- | Response body for @\/vectors\/fetch@
-data FetchVectors = FetchVectors
+data Vectors = Vectors
     { vectors :: Map Text VectorObject
     , namespace :: Namespace
     , usage :: Maybe Usage
@@ -99,7 +99,7 @@ _DeleteVectors = DeleteVectors
     }
 
 -- | Response body for @\/vectors\/list@
-data ListVectorIDs = ListVectorIDs
+data VectorIDs = VectorIDs
     { vectors :: Vector VectorID
     , pagination :: Maybe Pagination
     , namespace :: Namespace
@@ -184,14 +184,14 @@ data Usage = Usage
 type API =
           (   "vectors"
           :>  (     (   "upsert"
-                    :>  ReqBody '[JSON] UpsertVectorsRequest
-                    :>  Post '[JSON] UpsertVectorsResponse
+                    :>  ReqBody '[JSON] UpsertVectors
+                    :>  Post '[JSON] UpsertStats
                     )
 
               :<|>  (   "fetch"
                     :>  QueryParams "ids" Text
                     :>  QueryParam "namespace" Namespace
-                    :>  Get '[JSON] FetchVectors
+                    :>  Get '[JSON] Vectors
                     )
 
               :<|>  (   "update"
@@ -209,7 +209,7 @@ type API =
                     :>  QueryParam "limit" Natural
                     :>  QueryParam "paginationToken" Text
                     :>  QueryParam "namespace" Namespace
-                    :>  Get '[JSON] ListVectorIDs
+                    :>  Get '[JSON] VectorIDs
                     )
               )
           )

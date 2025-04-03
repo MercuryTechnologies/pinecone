@@ -1,4 +1,4 @@
--- | @\/@
+-- | Main entrypoint to the API
 module Pinecone
     ( -- * Methods
       getClientEnv
@@ -18,13 +18,14 @@ import Data.Proxy (Proxy(..))
 import Pinecone.Embed (GenerateVectors, Embeddings)
 import Pinecone.Prelude
 import Pinecone.Rerank (Documents(..), RerankResults(..))
+import Prelude hiding (id)
 import Servant.Client (ClientEnv)
 import Servant.Client.Core (BaseUrl(..), Scheme(..))
 
 import Pinecone.Backups
-    (CreateCollection, Collection, CollectionModel, ListCollections)
+    (CreateCollection, Collection, CollectionModel, Collections(..))
 import Pinecone.Imports
-    (Import, ImportModel, ListImports, StartImportRequest, StartImportResponse)
+    (Import, ImportModel, Imports, StartImport, StartImportResponse(..))
 import Pinecone.Indexes
     ( ConfigureIndex
     , CreateIndex
@@ -33,24 +34,24 @@ import Pinecone.Indexes
     , Host(..)
     , Index
     , IndexModel
-    , IndexModels
+    , IndexModels(..)
     , IndexStats
     )
 import Pinecone.Search
-    ( SearchWithTextRequest
-    , SearchWithTextResponse
-    , SearchWithVectorRequest
-    , SearchWithVectorResponse
+    ( Hits
+    , Matches
+    , SearchWithText
+    , SearchWithVector
     )
 import Pinecone.Vectors
     ( DeleteVectors
-    , FetchVectors
-    , ListVectorIDs
     , Namespace
     , Record
     , UpdateVector
-    , UpsertVectorsRequest
-    , UpsertVectorsResponse
+    , UpsertVectors
+    , UpsertStats
+    , VectorIDs
+    , Vectors
     )
 
 import qualified Control.Exception as Exception
@@ -71,9 +72,9 @@ getClientEnv
     :: Host
     -- ^ Base URL for API
     --
-    -- __CAREFULLY NOTE:__ This should be @app.pinecone.io@ for
-    -- `makeControlMethods` and should be /the index host/ for
-    -- `makeDataMethods`
+    -- __CAREFULLY NOTE:__ This should be @\"app.pinecone.io\"@ for
+    -- `makeControlMethods` and should be /the index host/ for `makeDataMethods`
+    -- (i.e. the `Pinecone.Indexes.host` field of a returned `IndexModel`).
     -> IO ClientEnv
 getClientEnv (Host baseUrlText) = do
     baseUrl <- Client.parseBaseUrl (Text.unpack baseUrlText)
@@ -111,14 +112,14 @@ makeControlMethods
     -> ControlMethods
 makeControlMethods clientEnv token = ControlMethods{..}
   where
-    (       (     listIndexes
+    (       (     listIndexes_
             :<|>  createIndex
             :<|>  createIndexWithEmbedding
             :<|>  describeIndex
             :<|>  deleteIndex_
             :<|>  configureIndex
             )
-      :<|>  (     listCollections
+      :<|>  (     listCollections_
             :<|>  createCollection
             :<|>  describeCollection
             :<|>  deleteCollection_
@@ -127,6 +128,8 @@ makeControlMethods clientEnv token = ControlMethods{..}
       :<|>  rerankResults
       ) = Client.hoistClient @ControlAPI Proxy (run clientEnv) (Client.client @ControlAPI Proxy) token apiVersion
 
+    listIndexes = fmap indexes listIndexes_
+    listCollections = fmap collections listCollections_
     deleteIndex a = void (deleteIndex_ a)
     deleteCollection a = void (deleteCollection_ a)
 
@@ -151,7 +154,7 @@ makeDataMethods clientEnv token = DataMethods{..}
       :<|>  (     searchWithVector
             :<|>  searchWithText
             )
-      :<|>  (     startImport
+      :<|>  (     startImport_
             :<|>  listImports
             :<|>  describeImport
             :<|>  cancelImport_
@@ -162,6 +165,7 @@ makeDataMethods clientEnv token = DataMethods{..}
     updateVector a = void (updateVector_ a)
     deleteVectors a = void (deleteVectors_ a)
     upsertText a b = void (upsertText_ a b)
+    startImport a = do StartImportResponse{ id } <- startImport_ a; return id
     cancelImport a = void (cancelImport_ a)
 
 run :: Client.ClientEnv -> Client.ClientM a -> IO a
@@ -173,13 +177,13 @@ run clientEnv clientM = do
 
 -- | Control plane methods
 data ControlMethods = ControlMethods
-    { listIndexes :: IO IndexModels
+    { listIndexes :: IO (Vector IndexModel)
     , createIndex :: CreateIndex -> IO IndexModel
     , createIndexWithEmbedding :: CreateIndexWithEmbedding -> IO IndexModel
     , describeIndex :: Index -> IO IndexModel
     , deleteIndex :: Index -> IO ()
     , configureIndex :: Index -> ConfigureIndex -> IO IndexModel
-    , listCollections :: IO ListCollections
+    , listCollections :: IO (Vector CollectionModel)
     , createCollection :: CreateCollection -> IO CollectionModel
     , describeCollection :: Collection -> IO CollectionModel
     , deleteCollection :: Collection -> IO ()
@@ -190,14 +194,14 @@ data ControlMethods = ControlMethods
 -- | Data plane methods
 data DataMethods = DataMethods
     { getIndexStats :: GetIndexStats -> IO IndexStats
-    , upsertVectors :: UpsertVectorsRequest -> IO UpsertVectorsResponse
+    , upsertVectors :: UpsertVectors -> IO UpsertStats
     , upsertText :: Namespace -> Record -> IO ()
     , fetchVectors
         :: Vector Text
         -- ^ IDs
         -> Maybe Namespace
         -- ^ namespace
-        -> IO FetchVectors
+        -> IO Vectors
     , updateVector :: UpdateVector -> IO ()
     , deleteVectors :: DeleteVectors -> IO ()
     , listVectorIDs
@@ -209,20 +213,16 @@ data DataMethods = DataMethods
         -- ^ pagination token
         -> Maybe Namespace
         -- ^ namespace
-        -> IO ListVectorIDs
-    , searchWithVector :: SearchWithVectorRequest -> IO SearchWithVectorResponse
-    , searchWithText
-        :: Namespace
-        -> SearchWithTextRequest
-        -> IO SearchWithTextResponse
-    , startImport
-        :: StartImportRequest -> IO StartImportResponse
+        -> IO VectorIDs
+    , searchWithVector :: SearchWithVector -> IO Matches
+    , searchWithText :: Namespace -> SearchWithText -> IO Hits
+    , startImport :: StartImport -> IO Import
     , listImports
         :: Maybe Natural
         -- ^ limit
         -> Maybe Text
         -- ^ paginationToken
-        -> IO ListImports
+        -> IO Imports
     , describeImport :: Import -> IO ImportModel
     , cancelImport :: Import -> IO ()
     }

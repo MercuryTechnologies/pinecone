@@ -46,6 +46,7 @@ library
                       , DerivingStrategies
                       , DuplicateRecordFields
                       , GeneralizedNewtypeDeriving
+                      , NamedFieldPuns
                       , OverloadedLists
                       , OverloadedStrings
                       , RecordWildCards

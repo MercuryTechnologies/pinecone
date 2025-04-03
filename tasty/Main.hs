@@ -19,24 +19,22 @@ import Pinecone.Indexes
     , EmbedRequest(..)
     , GetIndexStats(..)
     , IndexModel(..)
-    , IndexModels(..)
     , IndexStats(..)
     , Status(..)
     )
 import Pinecone.Search
-    ( Result(..)
+    ( Hits(..)
+    , Matches(..)
     , Query(..)
-    , SearchWithTextRequest(..)
-    , SearchWithTextResponse(..)
-    , SearchWithVectorRequest(..)
-    , SearchWithVectorResponse(..)
+    , SearchWithText(..)
+    , SearchWithVector(..)
     )
 import Pinecone.Vectors
     ( DeleteVectors(..)
-    , UpdateVector(..)
     , Record(..)
-    , UpsertVectorsRequest(..)
-    , UpsertVectorsResponse(..)
+    , UpdateVector(..)
+    , UpsertVectors(..)
+    , UpsertStats(..)
     , VectorObject(..)
     )
 
@@ -118,7 +116,7 @@ main = do
 
                 indexModel <- waitUntilIndexReady
 
-                IndexModels{ indexes } <- listIndexes
+                indexes <- listIndexes
 
                 case indexes of
                     [ indexModel₀ ]
@@ -132,7 +130,7 @@ main = do
                     , embed = Nothing
                     }
 
-                UpsertVectorsResponse{..} <- upsertVectors UpsertVectorsRequest
+                UpsertStats{..} <- upsertVectors UpsertVectors
                     { vectors =
                         [ VectorObject
                             { id = "vector-0"
@@ -175,7 +173,7 @@ main = do
 
                 _ <- listVectorIDs Nothing Nothing Nothing (Just namespace)
 
-                SearchWithTextResponse{ result } <- searchWithText namespace SearchWithTextRequest
+                Hits{ hits } <- searchWithText namespace SearchWithText
                     { query = Query
                         { top_k = 1
                         , filter = Nothing
@@ -186,11 +184,9 @@ main = do
                     , rerank = Nothing
                     }
 
-                let Result{ hits } = result
-
                 HUnit.assertEqual "" 1 (Vector.length hits)
 
-                SearchWithVectorResponse{ matches } <- searchWithVector SearchWithVectorRequest
+                Matches{ matches } <- searchWithVector SearchWithVector
                     { topK = 1
                     , namespace = Just namespace
                     , filter = Nothing
