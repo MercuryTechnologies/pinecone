@@ -21,6 +21,22 @@ import Pinecone.Prelude
 -- | Generate embeddings for inputs
 data GenerateVectors = GenerateVectors
     { model :: Text
+    , inputs :: Vector Text
+    , parameters :: Map Text Scalar
+    } deriving stock (Eq, Generic, Show)
+
+instance FromJSON GenerateVectors where
+    parseJSON value = do
+        GenerateVectors_{..} <- parseJSON value
+
+        return GenerateVectors{ inputs = fmap text inputs, ..}
+
+instance ToJSON GenerateVectors where
+    toJSON GenerateVectors{..} =
+        toJSON GenerateVectors_{ inputs = fmap Input inputs, ..}
+
+data GenerateVectors_ = GenerateVectors_
+    { model :: Text
     , inputs :: Vector Input
     , parameters :: Map Text Scalar
     } deriving stock (Eq, Generic, Show)

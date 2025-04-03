@@ -8,7 +8,7 @@
 module Main where
 
 import Pinecone (DataMethods(..), ControlMethods(..))
-import Pinecone.Embed (GenerateVectors(..), Input(..))
+import Pinecone.Embed (GenerateVectors(..))
 import Pinecone.Rerank (RerankResults(..))
 import Prelude hiding (id)
 
@@ -80,7 +80,7 @@ main = do
             Exception.bracket open close \IndexModel{ name, host } -> do
                 _ <- generateVectors GenerateVectors
                     { model = "llama-text-embed-v2"
-                    , inputs = [ Input{ text = "Hello, world!" } ]
+                    , inputs = [ "Hello, world!" ]
                     , parameters = [ ("input_type", "query") ]
                     }
 
