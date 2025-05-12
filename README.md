@@ -81,3 +81,55 @@ main = do
 
         print (fmap _id hits) -- ["hi"]
 ```
+
+## Running Tests
+
+The test suite creates and deletes a real Pinecone index named "vectors-test" in the AWS us-east-1 region, so you'll need an active Pinecone account with appropriate permissions.
+
+### Prerequisites
+
+You need to set your Pinecone API key. You can do this in one of two ways:
+
+1. Copy the sample environment file and set your API key:
+
+   ```bash
+   cp .envrc.sample .envrc
+   # Edit .envrc and replace "your-api-key-here" with your actual Pinecone API key
+   ```
+
+2. Or set it directly as an environment variable:
+   ```bash
+   export PINECONE_KEY="your-api-key-here"
+   ```
+
+### Running tests with Nix + direnv
+
+If you're using the provided Nix development environment:
+
+1. Allow direnv to set up the environment:
+
+   ```bash
+   direnv allow
+   ```
+
+2. Run the tests using Cabal:
+   ```bash
+   cabal test
+   ```
+
+### Running tests with Nix directly
+
+Alternatively, you can use Nix directly:
+
+```bash
+nix develop
+cabal test
+```
+
+### Running tests with Cabal only
+
+If you have GHC and Cabal installed directly on your system:
+
+```bash
+cabal test
+```

@@ -1,0 +1,40 @@
+---
+description:
+globs:
+alwaysApply: false
+---
+# Pinecone API Structure
+
+The Pinecone API is split into two main parts:
+
+## Control Plane API
+
+Located in [src/Pinecone/Indexes.hs](mdc:src/Pinecone/Indexes.hs), this handles index management functions:
+
+- Creating indexes
+- Listing indexes
+- Configuring indexes
+- Deleting indexes
+
+## Data Plane API
+
+This is spread across multiple modules:
+
+- [src/Pinecone/Vectors.hs](mdc:src/Pinecone/Vectors.hs) - Vector operations (upsert, update, delete)
+- [src/Pinecone/Search.hs](mdc:src/Pinecone/Search.hs) - Vector search operations
+- [src/Pinecone/Imports.hs](mdc:src/Pinecone/Imports.hs) - Bulk import operations
+
+## Additional Features
+
+- [src/Pinecone/Backups.hs](mdc:src/Pinecone/Backups.hs) - Collection management
+- [src/Pinecone/Embed.hs](mdc:src/Pinecone/Embed.hs) - Text embedding generation
+- [src/Pinecone/Rerank.hs](mdc:src/Pinecone/Rerank.hs) - Results reranking
+
+## Usage Pattern
+
+1. Create a `ClientEnv` for the control plane using `getClientEnv`
+2. Make `ControlMethods` using `makeControlMethods`
+3. Create or access an index
+4. Create a `ClientEnv` for the data plane using the index host
+5. Make `DataMethods` using `makeDataMethods`
+6. Perform vector operations

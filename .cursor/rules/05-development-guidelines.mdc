@@ -1,0 +1,48 @@
+---
+description:
+globs:
+alwaysApply: false
+---
+# Pinecone Development Guidelines
+
+## Code Style
+
+This project follows standard Haskell code conventions:
+- Use 4-space indentation
+- Use camelCase for function and variable names
+- Use PascalCase for types and constructors
+- Use snake_case for record fields to match Pinecone API naming
+
+## Language Extensions
+
+The project enables several language extensions by default in the cabal file:
+- BlockArguments
+- DataKinds
+- DeriveGeneric
+- DeriveAnyClass
+- DerivingStrategies
+- DuplicateRecordFields
+- GeneralizedNewtypeDeriving
+- NamedFieldPuns
+- OverloadedLists
+- OverloadedStrings
+- RecordWildCards
+- TypeApplications
+- TypeOperators
+
+## Record Fields
+
+Many record fields begin with underscore (`_`) to avoid name clashes due to the DuplicateRecordFields extension.
+
+## Dependencies
+
+Main external dependencies include:
+- servant/servant-client - For API type definitions and client generation
+- aeson - For JSON serialization/deserialization
+- http-client/http-client-tls - For HTTP communication
+- text - For text handling
+- vector - For vector data structures
+
+## Testing
+
+The test suite is located in the `tasty/` directory and uses the HUnit and Tasty testing frameworks.
