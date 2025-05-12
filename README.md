@@ -93,7 +93,7 @@ You need to set your Pinecone API key. You can do this in one of two ways:
 1. Copy the sample environment file and set your API key:
 
    ```bash
-   cp .envrc.sample .envrc
+   (umask 077; cp .envrc.sample .envrc)
    # Edit .envrc and replace "your-api-key-here" with your actual Pinecone API key
    ```
 
