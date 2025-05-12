@@ -32,7 +32,7 @@ The project enables several language extensions by default in the cabal file:
 
 ## Record Fields
 
-Many record fields begin with underscore (`_`) to avoid name clashes due to the DuplicateRecordFields extension.
+Some record fields begin with underscore (`_`) to match the Pinecone API field names (e.g. `_id` and `_score`, which have underscores in the Pinecone API).  Other record field names end with an underscore to conflicting with Haskell keywords (e.g. `data_` instead of `data`).
 
 ## Dependencies
 
