@@ -7,7 +7,7 @@ alwaysApply: false
 
 ## Code Style
 
-This project follows standard Haskell code conventions:
+This project follows standard Haskell code conventions (with the exception of record fields):
 - Use 4-space indentation
 - Use camelCase for function and variable names
 - Use PascalCase for types and constructors
