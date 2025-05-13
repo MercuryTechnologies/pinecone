@@ -1,2 +1,8 @@
+# Direnv
 .direnv/
+
+# Cabal
 dist-newstyle/
+
+# Direnv
+.envrc

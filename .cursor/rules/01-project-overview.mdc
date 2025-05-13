@@ -1,0 +1,28 @@
+---
+description:
+globs:
+alwaysApply: false
+---
+# Pinecone Haskell Library
+
+This is a Haskell binding to the Pinecone vector database API using `servant` for type-safe HTTP client generation.
+
+## Key Files
+
+- [src/Pinecone.hs](mdc:src/Pinecone.hs) - Main entry point that re-exports functionality from other modules
+- [pinecone-example/Main.hs](mdc:pinecone-example/Main.hs) - Example implementation showing basic usage
+
+## Project Structure
+
+The codebase follows a modular structure:
+
+- `src/Pinecone.hs` - Main module that exports all functionality
+- `src/Pinecone/` directory - Contains specialized modules for different Pinecone API features
+- `pinecone-example/` - Example usage of the library
+- `tasty/` - Test suite
+
+## Key Concepts
+
+- `ControlMethods` - Methods for managing Pinecone indexes (create, delete, etc.)
+- `DataMethods` - Methods for working with vector data (upsert, search, etc.)
+- The API is split into control plane (index management) and data plane (vector operations)

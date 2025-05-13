@@ -1,0 +1,54 @@
+---
+description:
+globs:
+alwaysApply: false
+---
+# Pinecone Usage Examples
+
+## Basic Setup
+
+The following pattern is used to set up a client for the Pinecone API:
+
+```haskell
+-- Set up control plane client
+controlEnv <- getClientEnv "https://api.pinecone.io"
+key <- Environment.getEnv "PINECONE_KEY"
+let token = Text.pack key
+let ControlMethods{..} = makeControlMethods controlEnv token
+
+-- Set up data plane client (after creating/getting an index)
+dataEnv <- getClientEnv host  -- host from IndexModel
+let DataMethods{..} = makeDataMethods dataEnv token
+```
+
+## Creating an Index with Embedding
+
+```haskell
+createIndexWithEmbedding _CreateIndexWithEmbedding
+    { name = "my-index"
+    , cloud = AWS
+    , region = "us-east-1"
+    , embed = EmbedRequest
+        { model = "llama-text-embed-v2"
+        , metric = Nothing
+        , read_parameters = Nothing
+        , write_parameters = Nothing
+        }
+    }
+```
+
+## Upserting and Searching
+
+```haskell
+-- Upserting text (which gets automatically embedded)
+upsertText "namespace" _Record{ id = "doc1", text = "Document content" }
+
+-- Searching with text query
+Hits{ hits } <- searchWithText "namespace" SearchWithText
+    { query = _Query{ top_k = 5, input = Just "search query" }
+    , fields = Nothing
+    , rerank = Nothing
+    }
+```
+
+See [pinecone-example/Main.hs](mdc:pinecone-example/Main.hs) for a complete working example.

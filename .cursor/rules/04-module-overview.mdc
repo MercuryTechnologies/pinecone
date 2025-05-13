@@ -1,0 +1,34 @@
+---
+description:
+globs:
+alwaysApply: false
+---
+# Pinecone Module Overview
+
+## Main Module
+
+- [src/Pinecone.hs](mdc:src/Pinecone.hs) - Main entry point that re-exports everything
+
+## Core Functionality Modules
+
+- [src/Pinecone/Indexes.hs](mdc:src/Pinecone/Indexes.hs) - Index management (create, list, configure, delete)
+- [src/Pinecone/Vectors.hs](mdc:src/Pinecone/Vectors.hs) - Vector operations (upsert, update, delete, fetch)
+- [src/Pinecone/Search.hs](mdc:src/Pinecone/Search.hs) - Vector search operations
+
+## Additional Feature Modules
+
+- [src/Pinecone/Backups.hs](mdc:src/Pinecone/Backups.hs) - Collection management
+- [src/Pinecone/Embed.hs](mdc:src/Pinecone/Embed.hs) - Text embedding generation
+- [src/Pinecone/Imports.hs](mdc:src/Pinecone/Imports.hs) - Bulk import operations
+- [src/Pinecone/Rerank.hs](mdc:src/Pinecone/Rerank.hs) - Results reranking
+- [src/Pinecone/Metadata.hs](mdc:src/Pinecone/Metadata.hs) - Metadata filtering and handling
+
+## Utility Modules
+
+- [src/Pinecone/Prelude.hs](mdc:src/Pinecone/Prelude.hs) - Common imports and utilities
+- [src/Pinecone/Pagination.hs](mdc:src/Pinecone/Pagination.hs) - Pagination support
+
+## Example and Tests
+
+- [pinecone-example/Main.hs](mdc:pinecone-example/Main.hs) - Example application
+- [tasty/Main.hs](mdc:tasty/Main.hs) - Test suite
